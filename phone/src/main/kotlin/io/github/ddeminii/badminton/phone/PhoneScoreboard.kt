@@ -2,8 +2,9 @@ package io.github.ddeminii.badminton.phone
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -31,8 +32,9 @@ private val PhoneGestureConfig = GestureConfig(
 )
 
 /**
- * 가로 화면을 좌/우 반으로 나눈 전광판. 왼쪽 = 나, 오른쪽 = 상대.
- * 카드 바깥의 여백을 포함해 화면의 각 절반 전체가 버튼이다.
+ * 폰 전광판. 화면의 각 절반 전체가 버튼이다 (카드 바깥의 여백 포함).
+ * - 가로로 눕히면 좌/우: 왼쪽 = 나, 오른쪽 = 상대
+ * - 세로로 세우면 위/아래: 위 = 나, 아래 = 상대 (워치와 같은 배치)
  */
 @Composable
 fun PhoneScoreboard(
@@ -42,30 +44,33 @@ fun PhoneScoreboard(
 ) {
     var pressed by remember { mutableStateOf(emptySet<Side>()) }
 
-    Row(
-        modifier = modifier
+    BoxWithConstraints(modifier.fillMaxSize()) {
+        val landscape = maxWidth >= maxHeight
+        val board = Modifier
             .fillMaxSize()
             .background(ScoreColors.Backdrop)
             .twoButtonInput(
-                split = SplitDirection.LEFT_RIGHT,
+                split = if (landscape) SplitDirection.LEFT_RIGHT else SplitDirection.TOP_BOTTOM,
                 config = PhoneGestureConfig,
                 onPressedChange = { pressed = it },
                 onAction = onAction,
-            ),
-    ) {
-        PhoneHalf(Side.ME, state.me, Side.ME in pressed)
-        PhoneHalf(Side.OPPONENT, state.opponent, Side.OPPONENT in pressed)
+            )
+        val halves = @Composable { half: Modifier ->
+            ScoreHalf(Side.ME, state.me, Side.ME in pressed, half)
+            ScoreHalf(Side.OPPONENT, state.opponent, Side.OPPONENT in pressed, half)
+        }
+
+        if (landscape) {
+            Row(board) { halves(Modifier.weight(1f).fillMaxHeight()) }
+        } else {
+            Column(board) { halves(Modifier.weight(1f).fillMaxWidth()) }
+        }
     }
 }
 
 @Composable
-private fun RowScope.PhoneHalf(side: Side, score: Int, pressed: Boolean) {
-    Box(
-        modifier = Modifier
-            .weight(1f)
-            .fillMaxHeight(),
-        contentAlignment = Alignment.Center,
-    ) {
+private fun ScoreHalf(side: Side, score: Int, pressed: Boolean, modifier: Modifier) {
+    Box(modifier = modifier, contentAlignment = Alignment.Center) {
         FlipScore(
             score = score,
             side = side,

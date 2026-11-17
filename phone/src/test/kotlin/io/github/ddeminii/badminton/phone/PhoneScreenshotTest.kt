@@ -47,4 +47,12 @@ class PhoneScreenshotTest {
         rule.mainClock.advanceTimeBy(300)
         rule.onRoot().captureRoboImage("build/screenshots/phone_pressed.png")
     }
+
+    /** 폰을 세로로 세웠을 때: 위 = 나, 아래 = 상대 */
+    @Test
+    @Config(sdk = [34], qualifiers = "w360dp-h780dp-port-xxhdpi")
+    fun portrait() {
+        rule.setContent { PhoneScoreboard(state = ScoreState(me = 21, opponent = 19), onAction = {}) }
+        rule.onRoot().captureRoboImage("build/screenshots/phone_portrait.png")
+    }
 }

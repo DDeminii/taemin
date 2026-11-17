@@ -2,6 +2,8 @@
 <resources>
     <style name="Theme.Scoreboard" parent="android:Theme.Material.NoActionBar">
         <item name="android:windowBackground">@color/scoreboard_backdrop</item>
+        <!-- 앱이 뜨는 순간부터 상단바(상태 표시줄)가 없는 전체 화면 -->
+        <item name="android:windowFullscreen">true</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
     </style>

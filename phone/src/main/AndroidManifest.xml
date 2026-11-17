@@ -8,12 +8,12 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Scoreboard">
 
-        <!-- 코트 옆에 세워 두는 전광판: 가로 모드 고정 -->
+        <!-- 폰을 눕히면 좌/우, 세우면 위/아래로 점수가 나온다. 시스템의 자동 회전 잠금과 상관없이 돌아간다. -->
         <activity
             android:name=".MainActivity"
-            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboardHidden"
             android:exported="true"
-            android:screenOrientation="sensorLandscape">
+            android:screenOrientation="fullSensor">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
