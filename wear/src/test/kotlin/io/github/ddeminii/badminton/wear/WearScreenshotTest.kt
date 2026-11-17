@@ -1,0 +1,43 @@
+package io.github.ddeminii.badminton.wear
+
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.performTouchInput
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.github.takahirom.roborazzi.captureRoboImage
+import io.github.ddeminii.badminton.shared.model.ScoreState
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
+
+/**
+ * 기기 없이 화면 모양을 확인하기 위한 미리보기. 결과는 wear/build/screenshots 에 저장된다.
+ * 저장되는 그림은 사각형이며, 실제 워치에서는 원 바깥이 보이지 않는다.
+ */
+@RunWith(AndroidJUnit4::class)
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
+@Config(sdk = [34], qualifiers = "w240dp-h240dp-round-watch-xhdpi")
+class WearScreenshotTest {
+
+    @get:Rule
+    val rule = createComposeRule()
+
+    @Test
+    fun screenshots() {
+        val state = mutableStateOf(ScoreState(me = 21, opponent = 19))
+        rule.setContent { WearScoreboard(state = state.value, onAction = {}) }
+        rule.onRoot().captureRoboImage("build/screenshots/wear.png")
+
+        state.value = ScoreState(me = 7, opponent = 11)
+        rule.mainClock.advanceTimeBy(2_000)
+        rule.onRoot().captureRoboImage("build/screenshots/wear_single_digit.png")
+
+        rule.onRoot().performTouchInput { down(Offset(centerX, height * 0.25f)) }
+        rule.mainClock.advanceTimeBy(300)
+        rule.onRoot().captureRoboImage("build/screenshots/wear_pressed.png")
+    }
+}

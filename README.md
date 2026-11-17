@@ -41,7 +41,8 @@ wear/     워치 앱 (원형 화면, Compose for Wear OS)
 | `shared/.../haptics/Haptics.kt` | 진동 패턴 (길이 조정은 이 파일 상수) |
 | `shared/.../sync/ScoreSync.kt` | 워치 ↔ 폰 동기화 |
 | `shared/.../ScoreboardViewModel.kt` | 위의 것들을 묶는 공통 로직, 점수 저장 |
-| `phone/.../PhoneScoreboard.kt`, `wear/.../WearScoreboard.kt` | 각 기기 화면, 기기별 타이밍 값 |
+| `shared/.../ui/ScoreColors.kt`, `ScorePanel.kt` | 타일 색·그라데이션, 숫자 그리기와 애니메이션 |
+| `phone/.../PhoneScoreboard.kt`, `wear/.../WearScoreboard.kt` | 각 기기 화면 배치, 기기별 타이밍 값 |
 
 ### 동기화 방식
 
@@ -65,7 +66,10 @@ Android Studio에서 이 폴더를 열면 실행 구성에 `phone`과 `wear`가 
 ./gradlew :phone:installDebug     # 폰이 연결된 상태에서
 ./gradlew :wear:installDebug      # 워치가 연결된 상태에서
 ./gradlew :shared:testDebugUnitTest
+./gradlew :phone:testDebugUnitTest :wear:testDebugUnitTest   # 화면 미리보기 PNG 생성
 ```
+
+미리보기는 `phone/build/screenshots`, `wear/build/screenshots`에 저장된다. 기기 없이 UI를 고칠 때 쓴다.
 
 기기가 둘 다 연결돼 있으면 `ANDROID_SERIAL=<기기 ID>`로 대상을 고른다 (`adb devices`로 확인).
 
@@ -84,3 +88,7 @@ Android Studio에서 이 폴더를 열면 실행 구성에 `phone`과 `wear`가 
 - [ ] 경기 내내 두 기기 화면이 켜져 있는지, 배터리 소모가 감당할 만한지
 
 워치 설정의 "손바닥으로 덮어 화면 끄기" 같은 시스템 제스처는 앱에서 막을 수 없으니, 방해되면 워치 설정에서 꺼 둔다.
+
+## 글꼴
+
+점수 숫자는 [Barlow Semi Condensed](https://github.com/jpt/barlow) SemiBold를 쓴다 (SIL Open Font License 1.1, `shared/licenses/`).

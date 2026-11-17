@@ -1,23 +1,35 @@
 package io.github.ddeminii.badminton.shared.ui
 
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.lerp
 import io.github.ddeminii.badminton.shared.model.Side
 
+/** 한쪽 타일의 색. 빛이 닿는 곳(light)에서 기본색(base)을 지나 가장자리(dark)로 어두워진다. */
+class TilePalette(
+    val light: Color,
+    val base: Color,
+    val dark: Color,
+    val text: Color,
+)
+
 object ScoreColors {
-    val MeBackground = Color(0xFF085041)
-    val MeText = Color(0xFFE1F5EE)
-    val OpponentBackground = Color(0xFF712B13)
-    val OpponentText = Color(0xFFFAECE7)
+    /** 나: 청록 */
+    val Me = TilePalette(
+        light = Color(0xFF128A70),
+        base = Color(0xFF085041),
+        dark = Color(0xFF04271F),
+        text = Color(0xFFE1F5EE),
+    )
 
-    /** 두 버튼 사이 경계선 */
-    val Divider = Color.Black
+    /** 상대: 주황 */
+    val Opponent = TilePalette(
+        light = Color(0xFFB04A22),
+        base = Color(0xFF712B13),
+        dark = Color(0xFF381207),
+        text = Color(0xFFFAECE7),
+    )
 
-    fun background(side: Side): Color =
-        if (side == Side.ME) MeBackground else OpponentBackground
+    /** 타일 사이와 바깥의 바탕 */
+    val Backdrop = Color.Black
 
-    /** 누르고 있는 동안의 살짝 밝아진 배경 */
-    fun pressedBackground(side: Side): Color = lerp(background(side), Color.White, 0.15f)
-
-    fun text(side: Side): Color = if (side == Side.ME) MeText else OpponentText
+    fun of(side: Side): TilePalette = if (side == Side.ME) Me else Opponent
 }
