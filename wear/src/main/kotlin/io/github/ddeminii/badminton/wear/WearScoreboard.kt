@@ -1,7 +1,6 @@
 package io.github.ddeminii.badminton.wear
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Spacer
@@ -12,18 +11,16 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.BiasAlignment
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import io.github.ddeminii.badminton.shared.gesture.GestureAction
 import io.github.ddeminii.badminton.shared.gesture.GestureConfig
 import io.github.ddeminii.badminton.shared.gesture.SplitDirection
 import io.github.ddeminii.badminton.shared.gesture.twoButtonInput
 import io.github.ddeminii.badminton.shared.model.ScoreState
 import io.github.ddeminii.badminton.shared.model.Side
+import io.github.ddeminii.badminton.shared.ui.FlipScore
 import io.github.ddeminii.badminton.shared.ui.ScoreColors
-import io.github.ddeminii.badminton.shared.ui.ScoreDigits
-import io.github.ddeminii.badminton.shared.ui.ScorePanel
 
 /**
  * 워치의 제스처 타이밍.
@@ -36,12 +33,16 @@ private val WearGestureConfig = GestureConfig(
 )
 
 /**
- * 반원 안에서 숫자가 차지하는 세로 비율.
- * 원이 좁아지는 바깥쪽에 여백을 더 두어 숫자가 화면 가장자리에 닿지 않게 한다.
+ * 반원 안에서 카드가 놓이는 자리. 원이 좁아지는 바깥쪽(OUTER)에 여백을 더 두어
+ * 카드 모서리가 화면 가장자리에 잘리지 않게 한다.
  */
-private const val OUTER_SPACE = 0.20f
-private const val DIGITS_SPACE = 0.68f
-private const val INNER_SPACE = 0.12f
+private const val OUTER_SPACE = 0.21f
+private const val CARDS_SPACE = 0.73f
+private const val INNER_SPACE = 0.06f
+private const val CARDS_WIDTH = 0.58f
+
+/** 워치는 반원이 낮고 넓어서 폰보다 납작한 카드를 쓴다. */
+private const val CARD_ASPECT = 0.76f
 
 /** 원형 화면을 위/아래 반으로 나눈 점수판. 위 = 나, 아래 = 상대. */
 @Composable
@@ -62,35 +63,31 @@ fun WearScoreboard(
                 onPressedChange = { pressed = it },
                 onAction = onAction,
             ),
-        verticalArrangement = Arrangement.spacedBy(3.dp),
     ) {
-        WearTile(Side.ME, state.me, Side.ME in pressed)
-        WearTile(Side.OPPONENT, state.opponent, Side.OPPONENT in pressed)
+        WearHalf(Side.ME, state.me, Side.ME in pressed)
+        WearHalf(Side.OPPONENT, state.opponent, Side.OPPONENT in pressed)
     }
 }
 
 @Composable
-private fun ColumnScope.WearTile(side: Side, score: Int, pressed: Boolean) {
+private fun ColumnScope.WearHalf(side: Side, score: Int, pressed: Boolean) {
     val top = side == Side.ME
-    ScorePanel(
-        side = side,
-        pressed = pressed,
-        // 빛이 숫자 뒤에서 퍼져 나가 원의 가장자리로 갈수록 어두워진다.
-        lightFrom = BiasAlignment(0f, if (top) 0.35f else -0.35f),
+    Column(
         modifier = Modifier
             .weight(1f)
             .fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Column(Modifier.fillMaxSize()) {
-            Spacer(Modifier.weight(if (top) OUTER_SPACE else INNER_SPACE))
-            ScoreDigits(
-                score = score,
-                color = ScoreColors.of(side).text,
-                modifier = Modifier
-                    .weight(DIGITS_SPACE)
-                    .fillMaxWidth(),
-            )
-            Spacer(Modifier.weight(if (top) INNER_SPACE else OUTER_SPACE))
-        }
+        Spacer(Modifier.weight(if (top) OUTER_SPACE else INNER_SPACE))
+        FlipScore(
+            score = score,
+            side = side,
+            pressed = pressed,
+            cardAspect = CARD_ASPECT,
+            modifier = Modifier
+                .weight(CARDS_SPACE)
+                .fillMaxWidth(CARDS_WIDTH),
+        )
+        Spacer(Modifier.weight(if (top) INNER_SPACE else OUTER_SPACE))
     }
 }

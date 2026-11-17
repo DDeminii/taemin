@@ -8,6 +8,10 @@ Galaxy Watch7(Wear OS)과 Galaxy S25 Ultra(Android) 어느 쪽에서 눌러도 �
 | :---: | :---: |
 | <img src="docs/watch.png" width="220"> | <img src="docs/phone.png" width="480"> |
 
+플립 시계 모양이다. 점수가 바뀌면 바뀐 자리의 카드만 넘어간다 (아래는 21:19 → 22:20 으로 넘어가는 중).
+
+<img src="docs/phone_flip.png" width="480">
+
 ## 조작
 
 워치와 폰이 똑같다. 화면 전체가 큰 버튼 두 개다.
@@ -21,6 +25,7 @@ Galaxy Watch7(Wear OS)과 Galaxy S25 Ultra(Android) 어느 쪽에서 눌러도 �
 - −1과 새 게임은 손을 떼기 전, 시간이 찬 순간에 바로 실행되고 진동이 온다.
 - 두 버튼이 함께 눌리면 각각의 −1은 취소된다. 0.8초 전에 떼면 아무 일도 일어나지 않는다.
 - +1 직후 같은 버튼은 잠깐 입력을 무시한다 (오터치 방지, 워치 0.4초 / 폰 0.3초).
+- 카드 바깥 여백을 포함해 화면의 각 절반 전체가 버튼이다. 누르고 있는 동안 그쪽 카드가 살짝 진해지며 눌려 들어간다.
 - 손가락이 처음 닿은 쪽 버튼으로 판정하므로, 누른 채로 미끄러져도 다른 버튼으로 넘어가지 않는다.
 - 워치는 폰에서 바뀐 점수도 같은 패턴의 진동으로 알려준다.
 - 워치는 옆으로 쓸어도 닫히지 않는다. 종료는 워치의 뒤로/홈 버튼으로 한다.
@@ -41,7 +46,8 @@ wear/     워치 앱 (원형 화면, Compose for Wear OS)
 | `shared/.../haptics/Haptics.kt` | 진동 패턴 (길이 조정은 이 파일 상수) |
 | `shared/.../sync/ScoreSync.kt` | 워치 ↔ 폰 동기화 |
 | `shared/.../ScoreboardViewModel.kt` | 위의 것들을 묶는 공통 로직, 점수 저장 |
-| `shared/.../ui/ScoreColors.kt`, `ScorePanel.kt` | 타일 색·그라데이션, 숫자 그리기와 애니메이션 |
+| `shared/.../ui/ScoreColors.kt` | 바탕·카드·숫자 색 |
+| `shared/.../ui/FlipScore.kt` | 플립 카드 그리기와 넘어가는 애니메이션 (속도는 `FLIP_MS`) |
 | `phone/.../PhoneScoreboard.kt`, `wear/.../WearScoreboard.kt` | 각 기기 화면 배치, 기기별 타이밍 값 |
 
 ### 동기화 방식
@@ -91,4 +97,4 @@ Android Studio에서 이 폴더를 열면 실행 구성에 `phone`과 `wear`가 
 
 ## 글꼴
 
-점수 숫자는 [Barlow Semi Condensed](https://github.com/jpt/barlow) SemiBold를 쓴다 (SIL Open Font License 1.1, `shared/licenses/`).
+점수 숫자는 [Oswald](https://github.com/googlefonts/OswaldFont) SemiBold를 쓴다 (SIL Open Font License 1.1, `shared/licenses/`).

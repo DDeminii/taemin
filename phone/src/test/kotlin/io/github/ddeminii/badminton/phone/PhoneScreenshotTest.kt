@@ -1,6 +1,7 @@
 package io.github.ddeminii.badminton.phone
 
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onRoot
@@ -29,7 +30,16 @@ class PhoneScreenshotTest {
         rule.setContent { PhoneScoreboard(state = state.value, onAction = {}) }
         rule.onRoot().captureRoboImage("build/screenshots/phone.png")
 
-        state.value = ScoreState(me = 7, opponent = 11)
+        // 카드가 넘어가는 중간 모습: 19 → 20 은 두 자리가 함께, 21 → 22 는 일의 자리만 넘어간다.
+        rule.mainClock.autoAdvance = false
+        Snapshot.withMutableSnapshot { state.value = ScoreState(me = 22, opponent = 20) }
+        rule.mainClock.advanceTimeBy(150)
+        rule.onRoot().captureRoboImage("build/screenshots/phone_flip_1.png")
+        rule.mainClock.advanceTimeBy(150)
+        rule.onRoot().captureRoboImage("build/screenshots/phone_flip_2.png")
+        rule.mainClock.advanceTimeBy(2_000)
+
+        Snapshot.withMutableSnapshot { state.value = ScoreState(me = 7, opponent = 11) }
         rule.mainClock.advanceTimeBy(2_000)
         rule.onRoot().captureRoboImage("build/screenshots/phone_single_digit.png")
 
