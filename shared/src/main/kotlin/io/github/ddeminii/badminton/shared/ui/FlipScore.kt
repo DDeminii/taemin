@@ -50,6 +50,7 @@ import kotlin.math.min
  * 누르고 있는 동안에는 카드가 살짝 진해지고 눌려 들어간다.
  *
  * @param cardAspect 카드 한 장의 가로/세로 비율
+ * @param rest 절전 화면으로 넘어간 정도 (0 = 평소 색, 1 = 어두운 절전 색). 그릴 때마다 읽는다.
  */
 @Composable
 fun FlipScore(
@@ -58,8 +59,9 @@ fun FlipScore(
     pressed: Boolean,
     modifier: Modifier = Modifier,
     cardAspect: Float = 0.58f,
+    rest: () -> Float = { 0f },
 ) {
-    val palette = ScoreColors.of(side)
+    val palette = { ScoreColors.of(side).towards(ScoreColors.resting(side), rest()) }
     val press = animateFloatAsState(
         targetValue = if (pressed) 1f else 0f,
         animationSpec = tween(durationMillis = if (pressed) 50 else 220),
@@ -110,7 +112,7 @@ private data class Face(val digit: Char, val dimmed: Boolean)
 @Composable
 private fun FlipCard(
     face: Face,
-    palette: SidePalette,
+    palette: () -> SidePalette,
     press: State<Float>,
     modifier: Modifier = Modifier,
 ) {
@@ -127,21 +129,19 @@ private fun FlipCard(
     }
 
     val context = LocalContext.current
-    val painter = remember(context, palette) {
-        CardPainter(
-            palette = palette,
-            typeface = ResourcesCompat.getFont(context, R.font.oswald_semibold) ?: Typeface.DEFAULT_BOLD,
-        )
+    val painter = remember(context) {
+        CardPainter(ResourcesCompat.getFont(context, R.font.oswald_semibold) ?: Typeface.DEFAULT_BOLD)
     }
 
     Box(modifier) {
         // 움직이지 않는 부분: 새 숫자의 위쪽, 그리고 덮이기 전까지는 이전 숫자의 아래쪽
         Canvas(Modifier.matchParentSize()) {
             val flipping = progress.value < 1f
+            val colors = palette()
             with(painter) {
-                drawShadow()
-                drawHalf(top = true, face = to, press = press.value)
-                drawHalf(top = false, face = if (flipping) from else to, press = press.value)
+                drawShadow(colors)
+                drawHalf(colors, top = true, face = to, press = press.value)
+                drawHalf(colors, top = false, face = if (flipping) from else to, press = press.value)
             }
         }
         // 넘어가는 날개. 카드 가운데 가로선을 축으로 돈다.
@@ -154,12 +154,13 @@ private fun FlipCard(
                 },
         ) {
             val p = progress.value
+            val colors = palette()
             with(painter) {
                 when {
-                    p < 0.5f -> drawHalf(top = true, face = from, press = press.value, shade = flapShade(p))
-                    p < 1f -> drawHalf(top = false, face = to, press = press.value, shade = flapShade(p))
+                    p < 0.5f -> drawHalf(colors, top = true, face = from, press = press.value, shade = flapShade(p))
+                    p < 1f -> drawHalf(colors, top = false, face = to, press = press.value, shade = flapShade(p))
                 }
-                drawFold()
+                drawFold(colors)
             }
         }
     }
@@ -178,10 +179,7 @@ private fun flapShade(progress: Float): Float =
 
 private fun square(x: Float) = x * x
 
-private class CardPainter(
-    private val palette: SidePalette,
-    typeface: Typeface,
-) {
+private class CardPainter(typeface: Typeface) {
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         this.typeface = typeface
         textAlign = Paint.Align.CENTER
@@ -191,13 +189,14 @@ private class CardPainter(
     private fun DrawScope.corner() = CornerRadius(size.width * 0.13f)
 
     /** 카드 아래에 깔리는 부드러운 그림자 */
-    fun DrawScope.drawShadow() {
+    fun DrawScope.drawShadow(palette: SidePalette) {
+        if (palette.shadow <= 0f) return
         val spread = size.width * 0.035f
         for (step in 1..4) {
             val grow = spread * step / 4f
             drawRoundRect(
                 color = Color.Black,
-                alpha = 0.035f,
+                alpha = 0.035f * palette.shadow,
                 topLeft = Offset(-grow * 0.5f, spread * 0.9f - grow * 0.2f),
                 size = Size(size.width + grow, size.height + grow * 0.6f),
                 cornerRadius = corner(),
@@ -206,7 +205,7 @@ private class CardPainter(
     }
 
     /** 카드의 위쪽 또는 아래쪽 절반만 그린다. */
-    fun DrawScope.drawHalf(top: Boolean, face: Face, press: Float, shade: Float = 0f) {
+    fun DrawScope.drawHalf(palette: SidePalette, top: Boolean, face: Face, press: Float, shade: Float = 0f) {
         val middle = size.height / 2f
         clipRect(top = if (top) 0f else middle, bottom = if (top) middle else size.height) {
             val card = lerp(palette.card, palette.cardPressed, press)
@@ -229,7 +228,7 @@ private class CardPainter(
     }
 
     /** 카드 가운데의 접힌 선 */
-    fun DrawScope.drawFold() {
+    fun DrawScope.drawFold(palette: SidePalette) {
         val thickness = (size.height * 0.011f).coerceAtLeast(1f)
         drawRect(
             color = palette.fold,

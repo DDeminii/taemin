@@ -5,14 +5,18 @@ import android.content.Context
 import android.content.pm.PackageManager
 import androidx.core.content.edit
 import androidx.lifecycle.AndroidViewModel
+import io.github.ddeminii.badminton.shared.cheer.CheerSchedule
 import io.github.ddeminii.badminton.shared.gesture.GestureAction
 import io.github.ddeminii.badminton.shared.haptics.HapticPattern
 import io.github.ddeminii.badminton.shared.haptics.Haptics
 import io.github.ddeminii.badminton.shared.model.ScoreState
 import io.github.ddeminii.badminton.shared.model.Side
 import io.github.ddeminii.badminton.shared.sync.ScoreSync
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 /** 워치와 폰이 똑같이 쓰는 점수판 로직: 상태 보관, 진동, 동기화. */
@@ -28,6 +32,12 @@ class ScoreboardViewModel(application: Application) : AndroidViewModel(applicati
 
     private val _state = MutableStateFlow(load())
     val state: StateFlow<ScoreState> = _state.asStateFlow()
+
+    private val cheerSchedule = CheerSchedule()
+    private val _cheers = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+
+    /** 응원을 내보낼 때가 되면 값이 하나 나온다. 어느 기기에서 점수를 올렸든 몇 점마다 한 번씩. */
+    val cheers: SharedFlow<Unit> = _cheers.asSharedFlow()
 
     init {
         sync.start()
@@ -49,6 +59,7 @@ class ScoreboardViewModel(application: Application) : AndroidViewModel(applicati
         commit(new)
         haptics.play(pattern)
         sync.push(new)
+        if (action is GestureAction.Increment) countPointForCheer()
     }
 
     private fun onRemoteState(remote: ScoreState) {
@@ -56,9 +67,13 @@ class ScoreboardViewModel(application: Application) : AndroidViewModel(applicati
         if (!remote.isNewerThan(old)) return
 
         commit(remote)
-        if (vibrateOnRemoteChange) {
-            HapticPattern.forChange(old, remote)?.let(haptics::play)
-        }
+        val pattern = HapticPattern.forChange(old, remote)
+        if (vibrateOnRemoteChange) pattern?.let(haptics::play)
+        if (pattern == HapticPattern.MY_POINT || pattern == HapticPattern.OPPONENT_POINT) countPointForCheer()
+    }
+
+    private fun countPointForCheer() {
+        if (cheerSchedule.onPoint()) _cheers.tryEmit(Unit)
     }
 
     private fun commit(state: ScoreState) {

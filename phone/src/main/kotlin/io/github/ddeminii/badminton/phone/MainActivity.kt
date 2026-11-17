@@ -11,12 +11,17 @@ import androidx.compose.runtime.getValue
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import io.github.ddeminii.badminton.shared.ScoreboardViewModel
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
     private val viewModel: ScoreboardViewModel by viewModels()
+    private lateinit var cheerVoice: CheerVoice
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // 카메라 구멍 영역까지 포함해 화면 전체에 그린다.
@@ -32,6 +37,19 @@ class MainActivity : ComponentActivity() {
             PhoneScoreboard(state = state, onAction = viewModel::onAction)
         }
         hideSystemBars()
+
+        // 점수판이 화면에 떠 있는 동안, 몇 점마다 한 번씩 응원 음성을 낸다.
+        cheerVoice = CheerVoice(this)
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.cheers.collect { cheerVoice.cheer() }
+            }
+        }
+    }
+
+    override fun onDestroy() {
+        cheerVoice.shutdown()
+        super.onDestroy()
     }
 
     /**

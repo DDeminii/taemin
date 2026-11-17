@@ -32,7 +32,10 @@ android {
         unitTests {
             isIncludeAndroidResources = true
             // 화면 미리보기 PNG를 build/screenshots 에 저장한다.
-            all { it.systemProperty("roborazzi.test.record", "true") }
+            all {
+                it.systemProperty("roborazzi.test.record", "true")
+                it.outputs.dir(layout.buildDirectory.dir("screenshots"))
+            }
         }
     }
 }

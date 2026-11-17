@@ -50,4 +50,17 @@ class WearScreenshotTest {
         rule.mainClock.advanceTimeBy(300)
         rule.onRoot().captureRoboImage("build/screenshots/wear_pressed.png")
     }
+
+    /** 한동안 입력이 없으면 어두운 절전 화면으로 바뀌고, 누르면 바로 다시 밝아진다. */
+    @Test
+    fun resting() {
+        rule.mainClock.autoAdvance = false
+        rule.setContent { WearScoreboard(state = ScoreState(me = 7, opponent = 11), onAction = {}) }
+        rule.mainClock.advanceTimeBy(REST_AFTER_MS + 2_000)
+        rule.onRoot().captureRoboImage("build/screenshots/wear_resting.png")
+
+        rule.onRoot().performTouchInput { down(Offset(centerX, height * 0.75f)) }
+        rule.mainClock.advanceTimeBy(300)
+        rule.onRoot().captureRoboImage("build/screenshots/wear_woken.png")
+    }
 }

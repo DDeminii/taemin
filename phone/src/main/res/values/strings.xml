@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 경기 중 가끔씩 폰이 소리 내어 읽는 응원 문구 -->
+    <string name="cheer_text">태민 화이팅!</string>
+</resources>
