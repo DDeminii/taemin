@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- 셔틀콕: 깃털 -->
+    <path
+        android:fillColor="#F4F4F0"
+        android:pathData="M38,34 L70,34 L61,62 L47,62 Z" />
+    <path
+        android:strokeColor="#9AA5A0"
+        android:strokeWidth="1.5"
+        android:pathData="M46,34 L50.5,62 M54,34 L54,62 M62,34 L57.5,62 M41,44 L67,44" />
+    <!-- 셔틀콕: 코르크 -->
+    <path
+        android:fillColor="#F4F4F0"
+        android:pathData="M46,61 h16 v5 a8,8 0 0 1 -16,0 z" />
+</vector>

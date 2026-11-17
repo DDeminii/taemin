@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">배드민턴 점수판</string>
+    <string name="label_me">나</string>
+    <string name="label_opponent">상대</string>
+</resources>

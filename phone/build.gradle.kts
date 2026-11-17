@@ -1,0 +1,43 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
+plugins {
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.kotlin.compose)
+}
+
+android {
+    namespace = "io.github.ddeminii.badminton.phone"
+    compileSdk = libs.versions.compileSdk.get().toInt()
+
+    defaultConfig {
+        // 워치 앱과 applicationId 및 서명 키가 같아야 Data Layer 동기화가 된다.
+        applicationId = "io.github.ddeminii.badminton"
+        minSdk = libs.versions.phoneMinSdk.get().toInt()
+        targetSdk = libs.versions.targetSdk.get().toInt()
+        versionCode = 1
+        versionName = "1.0"
+    }
+
+    buildFeatures {
+        compose = true
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget = JvmTarget.JVM_17
+    }
+}
+
+dependencies {
+    implementation(project(":shared"))
+    implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.lifecycle.runtime.compose)
+}
