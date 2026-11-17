@@ -12,6 +12,7 @@ activity = "1.12.4"
 core = "1.17.0"
 lifecycle = "2.10.0"
 playServicesWearable = "19.0.0"
+wearRemoteInteractions = "1.2.0"
 
 junit = "4.13.2"
 robolectric = "4.16"
@@ -28,6 +29,7 @@ androidx-activity-compose = { module = "androidx.activity:activity-compose", ver
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "core" }
 androidx-lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycle" }
 androidx-lifecycle-viewmodel-ktx = { module = "androidx.lifecycle:lifecycle-viewmodel-ktx", version.ref = "lifecycle" }
+androidx-wear-remote-interactions = { module = "androidx.wear:wear-remote-interactions", version.ref = "wearRemoteInteractions" }
 play-services-wearable = { module = "com.google.android.gms:play-services-wearable", version.ref = "playServicesWearable" }
 
 junit = { module = "junit:junit", version.ref = "junit" }

@@ -1,5 +1,6 @@
 package io.github.ddeminii.badminton.phone
 
+import android.os.Build
 import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
@@ -24,12 +25,30 @@ class MainActivity : ComponentActivity() {
 
         // 경기 중 화면이 꺼지지 않게 한다.
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        showOverLockScreen()
 
         setContent {
             val state by viewModel.state.collectAsStateWithLifecycle()
             PhoneScoreboard(state = state, onAction = viewModel::onAction)
         }
         hideSystemBars()
+    }
+
+    /**
+     * 워치에서 점수판을 켰을 때 폰이 잠겨 있거나 화면이 꺼져 있어도 바로 보이게 한다.
+     * 잠금은 풀리지 않으며, 점수판 밖으로 나가려면 평소처럼 잠금을 풀어야 한다.
+     */
+    private fun showOverLockScreen() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+            setShowWhenLocked(true)
+            setTurnScreenOn(true)
+        } else {
+            @Suppress("DEPRECATION")
+            window.addFlags(
+                WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
+                    WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON,
+            )
+        }
     }
 
     override fun onResume() {

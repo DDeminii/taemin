@@ -29,6 +29,7 @@ Galaxy Watch7(Wear OS)과 Galaxy S25 Ultra(Android) 어느 쪽에서 눌러도 �
 - 카드 바깥 여백을 포함해 화면의 각 절반 전체가 버튼이다. 누르고 있는 동안 그쪽 카드가 살짝 진해지며 눌려 들어간다.
 - 손가락이 처음 닿은 쪽 버튼으로 판정하므로, 누른 채로 미끄러져도 다른 버튼으로 넘어가지 않는다.
 - 워치는 폰에서 바뀐 점수도 같은 패턴의 진동으로 알려준다.
+- 워치에서 점수판을 켜면 연결된 폰의 점수판 앱도 자동으로 켜지고 점수가 맞춰진다. 폰이 잠겨 있으면 잠금화면 위에 뜬다.
 - 워치는 옆으로 쓸어도 닫히지 않는다. 종료는 워치의 뒤로/홈 버튼으로 한다.
 
 ## 프로젝트 구조
@@ -46,6 +47,7 @@ wear/     워치 앱 (원형 화면, Compose for Wear OS)
 | `shared/.../gesture/TwoButtonInput.kt` | 터치 이벤트를 위 판정기에 연결하는 Compose Modifier |
 | `shared/.../haptics/Haptics.kt` | 진동 패턴 (길이 조정은 이 파일 상수) |
 | `shared/.../sync/ScoreSync.kt` | 워치 ↔ 폰 동기화 |
+| `shared/.../sync/PhoneLaunch.kt` | 워치가 폰 앱을 여는 주소 (폰 매니페스트의 intent-filter와 짝) |
 | `shared/.../ScoreboardViewModel.kt` | 위의 것들을 묶는 공통 로직, 점수 저장 |
 | `shared/.../ui/ScoreColors.kt` | 바탕·카드·숫자 색 |
 | `shared/.../ui/FlipScore.kt` | 플립 카드 그리기와 넘어가는 애니메이션 (속도는 `FLIP_MS`) |
@@ -119,6 +121,7 @@ Android Studio에서 이 폴더를 열면 실행 구성에 `phone`과 `wear`가 
 
 에뮬레이터 없이 단위 테스트와 화면 렌더링까지만 확인했다. Watch7 + S25 Ultra에서 직접 봐야 하는 항목:
 
+- [ ] 워치에서 앱을 켜면 폰 앱이 따라 켜지는지 (폰 화면이 꺼져 있을 때, 잠겨 있을 때 포함)
 - [ ] 워치에서 누르면 폰이, 폰에서 누르면 워치가 바로 따라오는지 (지연 체감)
 - [ ] 블루투스를 껐다 켠 뒤 최신 점수로 맞춰지는지
 - [ ] 진동 4가지가 손목에서 구분되는지 (`Haptics.kt`의 길이 상수로 조정)
