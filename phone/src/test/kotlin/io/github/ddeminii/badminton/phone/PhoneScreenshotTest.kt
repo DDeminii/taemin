@@ -49,12 +49,23 @@ class PhoneScreenshotTest {
         rule.onRoot().captureRoboImage("build/screenshots/phone_pressed.png")
     }
 
-    /** 폰을 세로로 세웠을 때: 위 = 나, 아래 = 상대 */
+    /** 폰 세로 (네트 아래 바닥에 눕혀 둠): 아래 = 나, 위 = 상대(뒤집힘). 6·9 밑줄, 매치포인트 불길, 승리 효과도 함께 확인한다. */
     @Test
     @Config(sdk = [34], qualifiers = "w360dp-h780dp-port-xxhdpi")
     fun portrait() {
-        rule.setContent { PhoneScoreboard(state = ScoreState(me = 21, opponent = 19), onAction = {}) }
+        rule.mainClock.autoAdvance = false
+        val state = mutableStateOf(ScoreState(me = 6, opponent = 9))
+        rule.setContent { PhoneScoreboard(state = state.value, onAction = {}) }
+        rule.mainClock.advanceTimeBy(1_000)
         rule.onRoot().captureRoboImage("build/screenshots/phone_portrait.png")
+
+        Snapshot.withMutableSnapshot { state.value = ScoreState(me = 24, opponent = 22) }
+        rule.mainClock.advanceTimeBy(1_500)
+        rule.onRoot().captureRoboImage("build/screenshots/phone_portrait_fire.png")
+
+        Snapshot.withMutableSnapshot { state.value = ScoreState(me = 26, opponent = 24) }
+        rule.mainClock.advanceTimeBy(1_600)
+        rule.onRoot().captureRoboImage("build/screenshots/phone_portrait_won.png")
     }
 
     /** 매치포인트(24:22)와 듀스(24:24)에서 불타는 모습 */

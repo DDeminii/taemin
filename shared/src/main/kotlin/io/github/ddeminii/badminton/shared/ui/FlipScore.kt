@@ -524,6 +524,19 @@ private class CardPainter(typeface: Typeface) {
             val baseline = middle - (bounds.top + bounds.bottom) / 2f
             drawIntoCanvas { it.nativeCanvas.drawText(face.digit.toString(), size.width / 2f, baseline, paint) }
 
+            // 6과 9는 뒤집어 보면 서로 같아 보이므로 당구공처럼 아래에 밑줄을 긋는다.
+            if (face.digit == '6' || face.digit == '9') {
+                val lineWidth = bounds.width() * 0.62f
+                val thickness = bounds.height() * 0.055f
+                val top = baseline + bounds.height() * 0.07f
+                drawRoundRect(
+                    color = if (face.dimmed) palette.digitDimmed else palette.digit,
+                    topLeft = Offset(size.width / 2f - lineWidth / 2f, top),
+                    size = Size(lineWidth, thickness),
+                    cornerRadius = CornerRadius(thickness / 2f),
+                )
+            }
+
             if (shade > 0f) drawRoundRect(Color.Black, alpha = shade, cornerRadius = corner())
         }
     }

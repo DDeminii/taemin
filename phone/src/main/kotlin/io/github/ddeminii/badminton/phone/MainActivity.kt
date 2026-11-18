@@ -31,6 +31,7 @@ class MainActivity : ComponentActivity() {
 
     private val viewModel: ScoreboardViewModel by viewModels()
     private lateinit var cheerVoice: CheerVoice
+    private val flatHold by lazy { FlatOrientationHold(this) }
 
     private val notificationPermission =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
@@ -117,6 +118,12 @@ class MainActivity : ComponentActivity() {
         super.onResume()
         hideSystemBars()
         OpenFromWatchService.clearOpenNotification(this)
+        flatHold.start()
+    }
+
+    override fun onPause() {
+        flatHold.stop()
+        super.onPause()
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {

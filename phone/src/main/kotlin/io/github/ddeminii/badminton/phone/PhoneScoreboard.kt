@@ -15,6 +15,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import io.github.ddeminii.badminton.shared.gesture.GestureAction
 import io.github.ddeminii.badminton.shared.gesture.GestureConfig
 import io.github.ddeminii.badminton.shared.gesture.SplitDirection
@@ -38,8 +39,9 @@ private val PhoneGestureConfig = GestureConfig(
 
 /**
  * 폰 전광판. 화면의 각 절반 전체가 버튼이다 (카드 바깥의 여백 포함).
- * - 가로로 눕히면 좌/우: 왼쪽 = 나, 오른쪽 = 상대
- * - 세로로 세우면 위/아래: 위 = 나, 아래 = 상대 (워치와 같은 배치)
+ * - 가로: 좌/우. 왼쪽 = 나, 오른쪽 = 상대
+ * - 세로: 네트 아래 바닥에 눕혀 두고 양쪽 선수가 각자 자기 점수를 보는 배치.
+ *   아래 = 나 (똑바로), 위 = 상대 (180° 뒤집혀 맞은편 선수에게 똑바로 보임)
  */
 @Composable
 fun PhoneScoreboard(
@@ -55,7 +57,7 @@ fun PhoneScoreboard(
             .fillMaxSize()
             .background(ScoreColors.Backdrop)
             .twoButtonInput(
-                split = if (landscape) SplitDirection.LEFT_RIGHT else SplitDirection.TOP_BOTTOM,
+                split = if (landscape) SplitDirection.LEFT_RIGHT else SplitDirection.BOTTOM_TOP,
                 config = PhoneGestureConfig,
                 onPressedChange = { pressed = it },
                 onAction = onAction,
@@ -63,17 +65,32 @@ fun PhoneScoreboard(
         val onFire = GameRules.onFire(state)
         val winner = GameRules.winner(state)
         val loserEffect = LoserEffect.forGame(state)
-        val halves = @Composable { half: Modifier ->
-            ScoreHalf(Side.ME, state.me, Side.ME in pressed, Side.ME in onFire, resultFor(Side.ME, winner), loserEffect, half)
-            ScoreHalf(Side.OPPONENT, state.opponent, Side.OPPONENT in pressed, Side.OPPONENT in onFire, resultFor(Side.OPPONENT, winner), loserEffect, half)
+        val half = @Composable { side: Side, modifier: Modifier ->
+            ScoreHalf(
+                side = side,
+                score = if (side == Side.ME) state.me else state.opponent,
+                pressed = side in pressed,
+                burning = side in onFire,
+                result = resultFor(side, winner),
+                loserEffect = loserEffect,
+                // 세로일 때는 꽃가루도 절반마다 따로, 각 선수 쪽으로 떨어지게 한다.
+                confetti = if (landscape) null else winner,
+                modifier = modifier,
+            )
         }
 
         if (landscape) {
-            Row(board) { halves(Modifier.weight(1f).fillMaxHeight()) }
+            Row(board) {
+                half(Side.ME, Modifier.weight(1f).fillMaxHeight())
+                half(Side.OPPONENT, Modifier.weight(1f).fillMaxHeight())
+            }
+            Confetti(winner, Modifier.fillMaxSize())
         } else {
-            Column(board) { halves(Modifier.weight(1f).fillMaxWidth()) }
+            Column(board) {
+                half(Side.OPPONENT, Modifier.weight(1f).fillMaxWidth().rotate(180f))
+                half(Side.ME, Modifier.weight(1f).fillMaxWidth())
+            }
         }
-        Confetti(winner, Modifier.fillMaxSize())
     }
 }
 
@@ -91,6 +108,7 @@ private fun ScoreHalf(
     burning: Boolean,
     result: GameResult?,
     loserEffect: LoserEffect,
+    confetti: Side?,
     modifier: Modifier,
 ) {
     Box(modifier = modifier.fireBackground(burning, flameHeight = 0.95f), contentAlignment = Alignment.Center) {
@@ -105,5 +123,6 @@ private fun ScoreHalf(
                 .fillMaxWidth(0.88f)
                 .fillMaxHeight(0.84f),
         )
+        Confetti(confetti, Modifier.fillMaxSize())
     }
 }

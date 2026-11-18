@@ -18,12 +18,16 @@ enum class SplitDirection {
     TOP_BOTTOM,
 
     /** 폰: 왼쪽 = 나, 오른쪽 = 상대 */
-    LEFT_RIGHT;
+    LEFT_RIGHT,
+
+    /** 폰 세로 (바닥에 눕혀 네트 아래 두기): 아래 = 나, 위 = 상대 */
+    BOTTOM_TOP;
 
     fun sideAt(position: Offset, size: IntSize): Side {
         val inFirstHalf = when (this) {
             TOP_BOTTOM -> position.y < size.height / 2f
             LEFT_RIGHT -> position.x < size.width / 2f
+            BOTTOM_TOP -> position.y >= size.height / 2f
         }
         return if (inFirstHalf) Side.ME else Side.OPPONENT
     }

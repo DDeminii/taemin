@@ -20,7 +20,8 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Scoreboard">
 
-        <!-- 폰을 눕히면 좌/우, 세우면 위/아래로 점수가 나온다. 시스템의 자동 회전 잠금과 상관없이 돌아간다. -->
+        <!-- 폰을 가로로 두면 좌/우, 세로로 두면 위/아래로 점수가 나온다. 시스템의 자동 회전 잠금과 상관없이 돌아가며,
+             바닥에 눕히면 그 방향으로 고정된다 (FlatOrientationHold). -->
         <activity
             android:name=".MainActivity"
             android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboardHidden"
