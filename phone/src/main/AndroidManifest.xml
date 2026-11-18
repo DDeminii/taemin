@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!-- 워치에서 점수판을 켰을 때 폰 점수판을 띄우기 위한 권한 -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+
     <!-- 응원 음성을 읽어 줄 글자 읽어주기(TTS) 엔진을 찾을 수 있게 한다. -->
     <queries>
         <intent>
@@ -26,17 +31,21 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-
-            <!-- 워치에서 점수판을 켜면 이 주소로 폰 앱이 열린다. shared 의 PhoneLaunch 와 같아야 한다. -->
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                <data
-                    android:host="open"
-                    android:scheme="badmintonscoreboard" />
-            </intent-filter>
         </activity>
+
+        <!-- 워치에서 점수판을 켜면 앱이 꺼져 있어도 이 서비스가 신호를 받아 점수판을 띄운다.
+             pathPrefix 는 shared 의 PhoneLaunch.OPEN_PATH 와 같아야 한다. -->
+        <service
+            android:name=".OpenFromWatchService"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.google.android.gms.wearable.MESSAGE_RECEIVED" />
+                <data
+                    android:host="*"
+                    android:pathPrefix="/open-scoreboard"
+                    android:scheme="wear" />
+            </intent-filter>
+        </service>
     </application>
 
 </manifest>

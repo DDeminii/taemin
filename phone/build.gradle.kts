@@ -51,6 +51,9 @@ dependencies {
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.compose)
+    implementation(libs.play.services.wearable)
+    // Play 서비스가 끌어오는 오래된 Fragment 대신 권한 요청이 제대로 동작하는 버전을 쓴다.
+    implementation(libs.androidx.fragment)
 
     testImplementation(libs.junit)
     testImplementation(libs.robolectric)

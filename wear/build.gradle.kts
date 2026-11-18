@@ -50,7 +50,6 @@ dependencies {
     implementation(project(":shared"))
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)
-    implementation(libs.androidx.wear.remote.interactions)
 
     testImplementation(libs.junit)
     testImplementation(libs.robolectric)

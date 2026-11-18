@@ -1,15 +1,12 @@
 package io.github.ddeminii.badminton.wear
 
 import android.os.Bundle
-import android.util.Log
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.runtime.getValue
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.wear.remote.interactions.RemoteActivityHelper
 import io.github.ddeminii.badminton.shared.ScoreboardViewModel
 import io.github.ddeminii.badminton.shared.sync.PhoneLaunch
 
@@ -39,16 +36,6 @@ class MainActivity : ComponentActivity() {
      * 폰이 연결돼 있지 않거나 폰에 앱이 없으면 아무 일도 일어나지 않고 워치 단독으로 동작한다.
      */
     private fun openScoreboardOnPhone() {
-        val request = RemoteActivityHelper(this).startRemoteActivity(PhoneLaunch.intent())
-        request.addListener(
-            {
-                try {
-                    request.get()
-                } catch (e: Exception) {
-                    Log.d("WearScoreboard", "Could not open the phone app: ${e.message}")
-                }
-            },
-            ContextCompat.getMainExecutor(this),
-        )
+        PhoneLaunch.requestOpen(this)
     }
 }

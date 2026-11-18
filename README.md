@@ -30,6 +30,8 @@ Galaxy Watch7(Wear OS)과 Galaxy S25 Ultra(Android) 어느 쪽에서 눌러도 �
 - 손가락이 처음 닿은 쪽 버튼으로 판정하므로, 누른 채로 미끄러져도 다른 버튼으로 넘어가지 않는다.
 - 워치는 폰에서 바뀐 점수도 같은 패턴의 진동으로 알려준다.
 - 워치에서 점수판을 켜면 연결된 폰의 점수판 앱도 자동으로 켜지고 점수가 맞춰진다. 폰이 잠겨 있으면 잠금화면 위에 뜬다.
+  이를 위해 폰 앱을 설치한 뒤 **한 번 직접 열어서** 알림과 "다른 앱 위에 표시"를 허용해야 한다.
+  "다른 앱 위에 표시"를 허용하지 않으면 바로 켜지는 대신 "점수판 열기" 알림이 뜬다.
 - 워치는 5초 동안 입력이 없으면 검은 바탕의 절전 화면으로 바뀐다 (배터리 절약). 절전 화면에서도 점수는 보이고 터치는 한 번에 그대로 인식되며, 누르거나 점수가 바뀌면 바로 밝아진다.
 
   <img src="docs/watch_resting.png" width="160">
@@ -53,7 +55,8 @@ wear/     워치 앱 (원형 화면, Compose for Wear OS)
 | `shared/.../sync/ScoreSync.kt` | 워치 ↔ 폰 동기화 |
 | `shared/.../cheer/CheerSchedule.kt` | 응원을 몇 점마다 낼지 (기본 4~7점) |
 | `phone/.../CheerVoice.kt` | 응원 음성 (글자 읽어주기, 문구는 `phone/.../strings.xml`의 `cheer_text`) |
-| `shared/.../sync/PhoneLaunch.kt` | 워치가 폰 앱을 여는 주소 (폰 매니페스트의 intent-filter와 짝) |
+| `shared/.../sync/PhoneLaunch.kt` | 워치가 폰에 보내는 "점수판 열기" 신호 |
+| `phone/.../OpenFromWatchService.kt` | 그 신호를 받아 폰 점수판을 띄우거나 알림을 보여 줌 |
 | `shared/.../ScoreboardViewModel.kt` | 위의 것들을 묶는 공통 로직, 점수 저장 |
 | `shared/.../ui/ScoreColors.kt` | 바탕·카드·숫자 색 |
 | `shared/.../ui/FlipScore.kt` | 플립 카드 그리기와 넘어가는 애니메이션 (속도는 `FLIP_MS`) |
