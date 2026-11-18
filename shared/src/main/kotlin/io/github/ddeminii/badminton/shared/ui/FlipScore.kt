@@ -33,6 +33,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.clipRect
@@ -49,6 +50,7 @@ import androidx.core.content.res.ResourcesCompat
 import io.github.ddeminii.badminton.shared.R
 import io.github.ddeminii.badminton.shared.model.Side
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlin.math.min
 import kotlin.math.sin
 
@@ -61,7 +63,8 @@ import kotlin.math.sin
  * @param cardAspect 카드 한 장의 가로/세로 비율
  * @param rest 절전 화면으로 넘어간 정도 (0 = 평소 색, 1 = 어두운 절전 색). 그릴 때마다 읽는다.
  * @param burning 매치포인트·듀스일 때 true. 카드가 불에 달궈진 듯 달아오른다 (불길은 [fireBackground]).
- * @param result 경기가 끝났을 때 이쪽이 이겼는지(왕관이 내려앉음) 졌는지(회색으로 흐려짐). 진행 중이면 null.
+ * @param result 경기가 끝났을 때 이쪽이 이겼는지(왕관이 내려앉음) 졌는지(회색으로 흐려지고 비구름이 뜸). 진행 중이면 null.
+ *   경기가 끝나면 양쪽 카드가 똑같이 줄어들어 위에 왕관·구름 자리를 내므로 두 점수의 글자 크기가 같다.
  */
 @Composable
 fun FlipScore(
@@ -79,20 +82,31 @@ fun FlipScore(
         animationSpec = tween(durationMillis = 600),
         label = "fade",
     )
-    // 왕관 자리를 내기 위해 카드가 줄어드는 정도, 그리고 왕관이 떨어져 통통 튀며 내려앉는 진행도
+    // 경기가 끝나면 양쪽 카드가 똑같이 줄어 위에 왕관·구름 자리를 낸다.
     val crownRoom = animateFloatAsState(
-        targetValue = if (result == GameResult.WON) 1f else 0f,
+        targetValue = if (result != null) 1f else 0f,
         animationSpec = tween(durationMillis = 350),
         label = "crownRoom",
     )
+    // 왕관은 떨어져 통통 튀며 내려앉고, 구름은 부드럽게 내려와 떠 있는다.
     val crownDrop = remember { Animatable(0f) }
+    // 구름에서 내리는 비 (몇 초 뒤 그친다)
+    val rain = remember { Animatable(0f) }
     LaunchedEffect(result) {
-        if (result == GameResult.WON) {
-            crownDrop.snapTo(0f)
-            delay(CROWN_DELAY_MS)
-            crownDrop.animateTo(1f, spring(dampingRatio = 0.4f, stiffness = Spring.StiffnessLow))
-        } else {
-            crownDrop.snapTo(0f)
+        crownDrop.snapTo(0f)
+        rain.snapTo(0f)
+        when (result) {
+            GameResult.WON -> {
+                delay(CROWN_DELAY_MS)
+                crownDrop.animateTo(1f, spring(dampingRatio = 0.4f, stiffness = Spring.StiffnessLow))
+            }
+            GameResult.LOST -> {
+                delay(CROWN_DELAY_MS)
+                launch { crownDrop.animateTo(1f, spring(dampingRatio = 0.85f, stiffness = Spring.StiffnessVeryLow)) }
+                delay(RAIN_DELAY_MS)
+                rain.animateTo(1f, tween(RAIN_MS, easing = LinearEasing))
+            }
+            null -> Unit
         }
     }
     val heat = animateFloatAsState(
@@ -173,25 +187,70 @@ fun FlipScore(
             }
         }
 
-        // 왕관. 카드 위로 떨어져 통통 튀며 내려앉는다.
+        // 이긴 쪽은 왕관, 진 쪽은 비구름이 카드 위에 자리 잡는다.
         Canvas(Modifier.size(rowWidth, cardHeight)) {
             val drop = crownDrop.value
-            if (drop <= 0f) return@Canvas
+            if (drop <= 0f || result == null) return@Canvas
             val cardsTop = size.height * CROWN_ROOM * crownRoom.value
-            val crownWidth = size.width * CROWN_WIDTH * (1f - CROWN_ROOM * crownRoom.value)
-            val fall = (1f - drop) * size.height * 0.9f
-            drawCrown(
-                centerX = size.width / 2f,
-                baseY = cardsTop - size.height * 0.015f - fall,
-                width = crownWidth,
-                alpha = (drop * 3f).coerceIn(0f, 1f),
-            )
+            val width = size.width * CROWN_WIDTH * (1f - CROWN_ROOM * crownRoom.value)
+            val alpha = (drop * 3f).coerceIn(0f, 1f)
+            if (result == GameResult.WON) {
+                val fall = (1f - drop) * size.height * 0.9f
+                drawCrown(size.width / 2f, cardsTop - size.height * 0.015f - fall, width, alpha)
+            } else {
+                val fall = (1f - drop) * size.height * 0.25f
+                val cloudBase = cardsTop - size.height * 0.03f - fall
+                drawRain(size.width / 2f, cloudBase, width, rain.value)
+                drawCloud(size.width / 2f, cloudBase, width, alpha)
+            }
         }
     }
 }
 
 /** 경기가 끝났을 때 이쪽의 결과 */
 enum class GameResult { WON, LOST }
+
+/** 비구름 하나를 [baseY]에 바닥을 맞춰 그린다. */
+private fun DrawScope.drawCloud(centerX: Float, baseY: Float, width: Float, alpha: Float) {
+    val height = width * 0.5f
+    fun puffs(color: Color, dy: Float, a: Float) {
+        drawCircle(color, radius = height * 0.50f, center = Offset(centerX - width * 0.02f, baseY - height * 0.50f + dy), alpha = a)
+        drawCircle(color, radius = height * 0.36f, center = Offset(centerX - width * 0.28f, baseY - height * 0.36f + dy), alpha = a)
+        drawCircle(color, radius = height * 0.42f, center = Offset(centerX + width * 0.25f, baseY - height * 0.42f + dy), alpha = a)
+        drawRoundRect(
+            color = color,
+            topLeft = Offset(centerX - width * 0.44f, baseY - height * 0.5f + dy),
+            size = Size(width * 0.88f, height * 0.5f),
+            cornerRadius = CornerRadius(height * 0.25f),
+            alpha = a,
+        )
+    }
+    puffs(Color.Black, height * 0.06f, 0.08f * alpha)
+    puffs(ScoreColors.CloudShade, 0f, alpha)
+    puffs(ScoreColors.Cloud, -height * 0.07f, alpha)
+}
+
+/** 구름 아래로 떨어지는 빗줄기. [progress]가 1이 되면 그친다. */
+private fun DrawScope.drawRain(centerX: Float, cloudBase: Float, width: Float, progress: Float) {
+    if (progress <= 0f || progress >= 1f) return
+    val seconds = progress * RAIN_MS / 1000f
+    val fade = min(1f, progress / 0.08f) * min(1f, (1f - progress) / 0.2f)
+    val fallHeight = size.height - cloudBase
+    val length = width * 0.14f
+    for (i in 0 until RAIN_DROPS) {
+        val x = centerX + ((i + 0.5f) / RAIN_DROPS - 0.5f) * width * 0.8f + sin(i * 7.3f) * width * 0.03f
+        val phase = (i * 0.618f) % 1f
+        val y = cloudBase + ((phase + seconds * (1.1f + (i % 3) * 0.15f)) % 1f) * fallHeight
+        drawLine(
+            color = ScoreColors.Rain,
+            start = Offset(x, y),
+            end = Offset(x - length * 0.15f, y + length),
+            strokeWidth = width * 0.022f,
+            cap = StrokeCap.Round,
+            alpha = 0.85f * fade,
+        )
+    }
+}
 
 /** 왕관 하나를 [baseY]에 바닥을 맞춰 그린다. */
 private fun DrawScope.drawCrown(centerX: Float, baseY: Float, width: Float, alpha: Float) {
@@ -399,6 +458,11 @@ private const val BURNING_ANCHOR_Y = 0.15f
 private const val CROWN_ROOM = 0.2f
 private const val CROWN_WIDTH = 0.42f
 private const val CROWN_DELAY_MS = 250L
+
+/** 진 쪽 구름에서 비가 내리는 시간, 구름이 뜬 뒤 비가 시작되기까지의 틈, 빗줄기 수 */
+private const val RAIN_MS = 4_000
+private const val RAIN_DELAY_MS = 450L
+private const val RAIN_DROPS = 9
 
 /** 달아오른 카드가 밝아졌다 어두워지는 빠르기 (라디안/초) */
 private const val HEAT_PULSE_SPEED = 3f

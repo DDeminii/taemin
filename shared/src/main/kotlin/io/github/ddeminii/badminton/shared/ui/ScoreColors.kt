@@ -95,6 +95,11 @@ object ScoreColors {
     val CrownPearl = Color(0xFFFFECA0)
     val CrownGems = listOf(Color(0xFFDC3C3C), Color(0xFF288CDC), Color(0xFF3CAA5A))
 
+    /** 진 쪽 위에 뜨는 비구름과 빗줄기 */
+    val Cloud = Color(0xFFB4BCC4)
+    val CloudShade = Color(0xFF8F99A3)
+    val Rain = Color(0xFF6FA8DC)
+
     /** 이긴 쪽 색의 꽃가루 */
     val ConfettiMe = listOf(Color(0xFF085041), Color(0xFF128A70), Color(0xFF68E2C2), Color(0xFFFFCD50), Color(0xFFCDEBDD))
     val ConfettiOpponent = listOf(Color(0xFF712B13), Color(0xFFB04A22), Color(0xFFFF966C), Color(0xFFFFCD50), Color(0xFFF8D9C8))
