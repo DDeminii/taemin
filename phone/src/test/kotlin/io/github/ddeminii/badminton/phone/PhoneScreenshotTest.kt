@@ -55,4 +55,18 @@ class PhoneScreenshotTest {
         rule.setContent { PhoneScoreboard(state = ScoreState(me = 21, opponent = 19), onAction = {}) }
         rule.onRoot().captureRoboImage("build/screenshots/phone_portrait.png")
     }
+
+    /** 매치포인트(24:22)와 듀스(24:24)에서 불타는 모습 */
+    @Test
+    fun onFire() {
+        rule.mainClock.autoAdvance = false
+        val state = mutableStateOf(ScoreState(me = 24, opponent = 22))
+        rule.setContent { PhoneScoreboard(state = state.value, onAction = {}) }
+        rule.mainClock.advanceTimeBy(1_500)
+        rule.onRoot().captureRoboImage("build/screenshots/phone_match_point.png")
+
+        Snapshot.withMutableSnapshot { state.value = ScoreState(me = 24, opponent = 24) }
+        rule.mainClock.advanceTimeBy(1_500)
+        rule.onRoot().captureRoboImage("build/screenshots/phone_deuce.png")
+    }
 }

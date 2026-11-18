@@ -63,4 +63,18 @@ class WearScreenshotTest {
         rule.mainClock.advanceTimeBy(300)
         rule.onRoot().captureRoboImage("build/screenshots/wear_woken.png")
     }
+
+    /** 매치포인트(24:22)와 듀스(24:24)에서 불타는 모습 */
+    @Test
+    fun onFire() {
+        rule.mainClock.autoAdvance = false
+        val state = mutableStateOf(ScoreState(me = 24, opponent = 22))
+        rule.setContent { WearScoreboard(state = state.value, onAction = {}) }
+        rule.mainClock.advanceTimeBy(1_500)
+        rule.onRoot().captureRoboImage("build/screenshots/wear_match_point.png")
+
+        Snapshot.withMutableSnapshot { state.value = ScoreState(me = 24, opponent = 24) }
+        rule.mainClock.advanceTimeBy(1_500)
+        rule.onRoot().captureRoboImage("build/screenshots/wear_deuce.png")
+    }
 }

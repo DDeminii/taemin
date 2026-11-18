@@ -18,9 +18,11 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
@@ -28,6 +30,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
@@ -42,6 +45,7 @@ import androidx.core.content.res.ResourcesCompat
 import io.github.ddeminii.badminton.shared.R
 import io.github.ddeminii.badminton.shared.model.Side
 import kotlin.math.min
+import kotlin.math.sin
 
 /**
  * 플립 시계 모양의 점수 표시. 자리마다 카드 한 장이고, 숫자가 바뀐 자리의 카드만 넘어간다.
@@ -51,6 +55,7 @@ import kotlin.math.min
  *
  * @param cardAspect 카드 한 장의 가로/세로 비율
  * @param rest 절전 화면으로 넘어간 정도 (0 = 평소 색, 1 = 어두운 절전 색). 그릴 때마다 읽는다.
+ * @param burning 매치포인트·듀스일 때 true. 카드가 불에 달궈진 듯 달아오른다 (불길은 [fireBackground]).
  */
 @Composable
 fun FlipScore(
@@ -60,8 +65,27 @@ fun FlipScore(
     modifier: Modifier = Modifier,
     cardAspect: Float = 0.58f,
     rest: () -> Float = { 0f },
+    burning: Boolean = false,
 ) {
-    val palette = { ScoreColors.of(side).towards(ScoreColors.resting(side), rest()) }
+    val heat = animateFloatAsState(
+        targetValue = if (burning) 1f else 0f,
+        animationSpec = tween(durationMillis = 600),
+        label = "heat",
+    )
+    // 불길이 일렁이는 시간(초). 불타는 동안에만 매 프레임 흐르고, 꺼지면 멈춰 배터리를 쓰지 않는다.
+    val time = remember { mutableFloatStateOf(0f) }
+    LaunchedEffect(burning) {
+        if (!burning) return@LaunchedEffect
+        val start = withFrameNanos { it } - (time.floatValue * 1e9f).toLong()
+        while (true) withFrameNanos { time.floatValue = (it - start) / 1e9f }
+    }
+    val palette = {
+        // 달아오른 카드는 숨 쉬듯 조금씩 밝아졌다 어두워진다.
+        val glow = heat.value * (0.85f + 0.15f * sin(time.floatValue * HEAT_PULSE_SPEED))
+        ScoreColors.of(side)
+            .towards(ScoreColors.hot(side), glow)
+            .towards(ScoreColors.resting(side), rest())
+    }
     val press = animateFloatAsState(
         targetValue = if (pressed) 1f else 0f,
         animationSpec = tween(durationMillis = if (pressed) 50 else 220),
@@ -76,9 +100,23 @@ fun FlipScore(
         val count = digits.length
         val cardWidth = minOf(maxWidth / (count + (count - 1) * CARD_GAP), maxHeight * cardAspect)
         val cardHeight = cardWidth / cardAspect
+        val rowWidth = cardWidth * (count + (count - 1) * CARD_GAP)
+
+        // 불타는 동안에는 카드를 조금 줄이고 위로 띄워, 아래와 옆에서 타오르는 불길이 보이게 한다.
+        val fireLayer = Modifier.graphicsLayer {
+            val scale = 1f - BURNING_SHRINK * heat.value
+            scaleX = scale
+            scaleY = scale
+            transformOrigin = TransformOrigin(0.5f, BURNING_ANCHOR_Y)
+        }
+
+        // 달궈진 카드 주위로 번지는 열기
+        Canvas(fireLayer.size(rowWidth, cardHeight)) {
+            drawHeatHalo(heat.value * (1f - rest()))
+        }
 
         Row(
-            modifier = Modifier.graphicsLayer {
+            modifier = fireLayer.graphicsLayer {
                 val scale = 1f - PRESSED_SHRINK * press.value
                 scaleX = scale
                 scaleY = scale
@@ -97,6 +135,23 @@ fun FlipScore(
                 }
             }
         }
+    }
+}
+
+/** 달궈진 카드 주위로 번지는 주황빛 열기. [heat]가 0이면 아무것도 그리지 않는다. */
+private fun DrawScope.drawHeatHalo(heat: Float) {
+    if (heat <= 0.01f) return
+    val w = size.width
+    val h = size.height
+    for (step in 1..6) {
+        val grow = h * 0.04f * step
+        drawRoundRect(
+            color = ScoreColors.Heat,
+            alpha = 0.07f * heat,
+            topLeft = Offset(-grow, -grow * 0.7f),
+            size = Size(w + grow * 2, h + grow * 1.2f),
+            cornerRadius = CornerRadius(w * 0.08f + grow),
+        )
     }
 }
 
@@ -249,5 +304,12 @@ private const val DIGIT_WIDTH = 0.78f
 private const val FLIP_MS = 380
 
 private const val MAX_FLAP_SHADE = 0.22f
+
+/** 불타는 동안 카드가 줄어드는 비율과, 줄어들 때 붙잡는 세로 위치 (0 = 위, 1 = 아래) */
+private const val BURNING_SHRINK = 0.16f
+private const val BURNING_ANCHOR_Y = 0.15f
+
+/** 달아오른 카드가 밝아졌다 어두워지는 빠르기 (라디안/초) */
+private const val HEAT_PULSE_SPEED = 3f
 private const val PRESSED_SHRINK = 0.03f
 private const val REFERENCE_TEXT_SIZE = 200f

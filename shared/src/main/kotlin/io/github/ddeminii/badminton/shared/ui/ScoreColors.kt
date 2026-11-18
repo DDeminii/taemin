@@ -55,7 +55,21 @@ object ScoreColors {
     val RestingMe = resting(card = Color(0xFF07271F), digit = Color(0xFF9AD8C2))
     val RestingOpponent = resting(card = Color(0xFF2C1209), digit = Color(0xFFF0B79C))
 
+    /** 매치포인트·듀스: 카드가 불에 달궈진 듯 주황빛으로 달아오른다. 숫자는 원래 색을 붉게 태운 색. */
+    val HotMe = hot(digit = Me.digit)
+    val HotOpponent = hot(digit = Opponent.digit)
+
+    /** 카드 뒤에서 피어오르는 불길의 색 (바깥 불꽃 → 안쪽 불꽃) */
+    val FlameOuter = listOf(Color(0xF2E23A0C), Color(0xE6FF7A1E), Color(0x00FFB347))
+    val FlameInner = listOf(Color(0xF2FFC845), Color(0xCCFFF0B0), Color(0x00FFF6D0))
+    val Heat = Color(0xFFFF7A22)
+
+    /** 불타는 쪽의 어두운 바탕. 불길이 검은 배경 위에서처럼 선명하게 빛나게 한다. */
+    val FireBackdrop = Color(0xFF120503)
+
     fun of(side: Side): SidePalette = if (side == Side.ME) Me else Opponent
+
+    fun hot(side: Side): SidePalette = if (side == Side.ME) HotMe else HotOpponent
 
     fun resting(side: Side): SidePalette = if (side == Side.ME) RestingMe else RestingOpponent
 
@@ -68,6 +82,20 @@ object ScoreColors {
         digitDimmed = digit.copy(alpha = 0.16f),
         shadow = 1f,
     )
+
+    private fun hot(digit: Color): SidePalette {
+        val card = Color(0xFFFFAE6E)
+        val burnt = lerp(digit, Color(0xFF961400), 0.5f)
+        return SidePalette(
+            card = card,
+            cardHighlight = Color(0xFFFFDCA0),
+            cardPressed = lerp(card, burnt, 0.09f),
+            fold = lerp(card, burnt, 0.38f),
+            digit = burnt,
+            digitDimmed = burnt.copy(alpha = 0.16f),
+            shadow = 1f,
+        )
+    }
 
     private fun resting(card: Color, digit: Color) = SidePalette(
         card = card,

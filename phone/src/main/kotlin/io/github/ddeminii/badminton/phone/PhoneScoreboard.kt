@@ -19,10 +19,12 @@ import io.github.ddeminii.badminton.shared.gesture.GestureAction
 import io.github.ddeminii.badminton.shared.gesture.GestureConfig
 import io.github.ddeminii.badminton.shared.gesture.SplitDirection
 import io.github.ddeminii.badminton.shared.gesture.twoButtonInput
+import io.github.ddeminii.badminton.shared.model.GameRules
 import io.github.ddeminii.badminton.shared.model.ScoreState
 import io.github.ddeminii.badminton.shared.model.Side
 import io.github.ddeminii.badminton.shared.ui.FlipScore
 import io.github.ddeminii.badminton.shared.ui.ScoreColors
+import io.github.ddeminii.badminton.shared.ui.fireBackground
 
 /** 폰의 제스처 타이밍. 오터치가 잦으면 tapLockoutMs를 올린다. */
 private val PhoneGestureConfig = GestureConfig(
@@ -55,9 +57,10 @@ fun PhoneScoreboard(
                 onPressedChange = { pressed = it },
                 onAction = onAction,
             )
+        val onFire = GameRules.onFire(state)
         val halves = @Composable { half: Modifier ->
-            ScoreHalf(Side.ME, state.me, Side.ME in pressed, half)
-            ScoreHalf(Side.OPPONENT, state.opponent, Side.OPPONENT in pressed, half)
+            ScoreHalf(Side.ME, state.me, Side.ME in pressed, Side.ME in onFire, half)
+            ScoreHalf(Side.OPPONENT, state.opponent, Side.OPPONENT in pressed, Side.OPPONENT in onFire, half)
         }
 
         if (landscape) {
@@ -69,12 +72,13 @@ fun PhoneScoreboard(
 }
 
 @Composable
-private fun ScoreHalf(side: Side, score: Int, pressed: Boolean, modifier: Modifier) {
-    Box(modifier = modifier, contentAlignment = Alignment.Center) {
+private fun ScoreHalf(side: Side, score: Int, pressed: Boolean, burning: Boolean, modifier: Modifier) {
+    Box(modifier = modifier.fireBackground(burning, flameHeight = 0.95f), contentAlignment = Alignment.Center) {
         FlipScore(
             score = score,
             side = side,
             pressed = pressed,
+            burning = burning,
             modifier = Modifier
                 .fillMaxWidth(0.88f)
                 .fillMaxHeight(0.84f),

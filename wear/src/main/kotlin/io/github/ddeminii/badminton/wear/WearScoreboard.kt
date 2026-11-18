@@ -21,10 +21,12 @@ import io.github.ddeminii.badminton.shared.gesture.GestureAction
 import io.github.ddeminii.badminton.shared.gesture.GestureConfig
 import io.github.ddeminii.badminton.shared.gesture.SplitDirection
 import io.github.ddeminii.badminton.shared.gesture.twoButtonInput
+import io.github.ddeminii.badminton.shared.model.GameRules
 import io.github.ddeminii.badminton.shared.model.ScoreState
 import io.github.ddeminii.badminton.shared.model.Side
 import io.github.ddeminii.badminton.shared.ui.FlipScore
 import io.github.ddeminii.badminton.shared.ui.ScoreColors
+import io.github.ddeminii.badminton.shared.ui.fireBackground
 import kotlinx.coroutines.delay
 
 /**
@@ -93,18 +95,21 @@ fun WearScoreboard(
                 onAction = onAction,
             ),
     ) {
-        WearHalf(Side.ME, state.me, Side.ME in pressed, restFraction)
-        WearHalf(Side.OPPONENT, state.opponent, Side.OPPONENT in pressed, restFraction)
+        // 절전 화면에서는 불길을 끄고 애니메이션도 멈춰 배터리를 아낀다.
+        val onFire = if (resting) emptySet() else GameRules.onFire(state)
+        WearHalf(Side.ME, state.me, Side.ME in pressed, Side.ME in onFire, restFraction)
+        WearHalf(Side.OPPONENT, state.opponent, Side.OPPONENT in pressed, Side.OPPONENT in onFire, restFraction)
     }
 }
 
 @Composable
-private fun ColumnScope.WearHalf(side: Side, score: Int, pressed: Boolean, rest: () -> Float) {
+private fun ColumnScope.WearHalf(side: Side, score: Int, pressed: Boolean, burning: Boolean, rest: () -> Float) {
     val top = side == Side.ME
     Column(
         modifier = Modifier
             .weight(1f)
-            .fillMaxWidth(),
+            .fillMaxWidth()
+            .fireBackground(burning, flameHeight = 1f),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Spacer(Modifier.weight(if (top) OUTER_SPACE else INNER_SPACE))
@@ -114,6 +119,7 @@ private fun ColumnScope.WearHalf(side: Side, score: Int, pressed: Boolean, rest:
             pressed = pressed,
             cardAspect = CARD_ASPECT,
             rest = rest,
+            burning = burning,
             modifier = Modifier
                 .weight(CARDS_SPACE)
                 .fillMaxWidth(CARDS_WIDTH),
