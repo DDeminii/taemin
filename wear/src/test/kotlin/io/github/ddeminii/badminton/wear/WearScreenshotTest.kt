@@ -77,4 +77,18 @@ class WearScreenshotTest {
         rule.mainClock.advanceTimeBy(1_500)
         rule.onRoot().captureRoboImage("build/screenshots/wear_deuce.png")
     }
+
+    /** 26:24로 경기가 끝났을 때: 왕관이 내려앉고 꽃가루가 쏟아지며 진 쪽은 흐려진다. */
+    @Test
+    fun won() {
+        rule.mainClock.autoAdvance = false
+        val state = mutableStateOf(ScoreState(me = 25, opponent = 24))
+        rule.setContent { WearScoreboard(state = state.value, onAction = {}) }
+        rule.mainClock.advanceTimeBy(1_000)
+        Snapshot.withMutableSnapshot { state.value = ScoreState(me = 26, opponent = 24) }
+        rule.mainClock.advanceTimeBy(1_400)
+        rule.onRoot().captureRoboImage("build/screenshots/wear_won.png")
+        rule.mainClock.advanceTimeBy(4_000)
+        rule.onRoot().captureRoboImage("build/screenshots/wear_won_settled.png")
+    }
 }

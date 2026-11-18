@@ -67,6 +67,40 @@ object ScoreColors {
     /** 불타는 쪽의 어두운 바탕. 불길이 검은 배경 위에서처럼 선명하게 빛나게 한다. */
     val FireBackdrop = Color(0xFF120503)
 
+    /** 경기에서 진 쪽: 회색으로 흐려진다. */
+    val Faded = SidePalette(
+        card = Color(0xFFEAE5E1),
+        cardHighlight = Color(0xFFF4F1EE),
+        cardPressed = Color(0xFFE0DAD5),
+        fold = Color(0xFFCFC6C0),
+        digit = Color(0xFF9C928B),
+        digitDimmed = Color(0x299C928B),
+        shadow = 0.6f,
+    )
+
+    /** 진 쪽의 절전 화면 색 */
+    val RestingFaded = SidePalette(
+        card = Color(0xFF1F1D1C),
+        cardHighlight = Color(0xFF232120),
+        cardPressed = Color(0xFF2E2B29),
+        fold = Color.Black,
+        digit = Color(0xFF77706B),
+        digitDimmed = Color(0x2E77706B),
+        shadow = 0f,
+    )
+
+    /** 이긴 쪽 위로 내려앉는 왕관 */
+    val CrownGold = Color(0xFFF5BE32)
+    val CrownBand = Color(0xFFD6961E)
+    val CrownPearl = Color(0xFFFFECA0)
+    val CrownGems = listOf(Color(0xFFDC3C3C), Color(0xFF288CDC), Color(0xFF3CAA5A))
+
+    /** 이긴 쪽 색의 꽃가루 */
+    val ConfettiMe = listOf(Color(0xFF085041), Color(0xFF128A70), Color(0xFF68E2C2), Color(0xFFFFCD50), Color(0xFFCDEBDD))
+    val ConfettiOpponent = listOf(Color(0xFF712B13), Color(0xFFB04A22), Color(0xFFFF966C), Color(0xFFFFCD50), Color(0xFFF8D9C8))
+
+    fun confetti(side: Side): List<Color> = if (side == Side.ME) ConfettiMe else ConfettiOpponent
+
     fun of(side: Side): SidePalette = if (side == Side.ME) Me else Opponent
 
     fun hot(side: Side): SidePalette = if (side == Side.ME) HotMe else HotOpponent

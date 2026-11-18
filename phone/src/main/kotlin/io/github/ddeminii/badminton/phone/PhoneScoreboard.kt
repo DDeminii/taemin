@@ -22,7 +22,9 @@ import io.github.ddeminii.badminton.shared.gesture.twoButtonInput
 import io.github.ddeminii.badminton.shared.model.GameRules
 import io.github.ddeminii.badminton.shared.model.ScoreState
 import io.github.ddeminii.badminton.shared.model.Side
+import io.github.ddeminii.badminton.shared.ui.Confetti
 import io.github.ddeminii.badminton.shared.ui.FlipScore
+import io.github.ddeminii.badminton.shared.ui.GameResult
 import io.github.ddeminii.badminton.shared.ui.ScoreColors
 import io.github.ddeminii.badminton.shared.ui.fireBackground
 
@@ -58,9 +60,10 @@ fun PhoneScoreboard(
                 onAction = onAction,
             )
         val onFire = GameRules.onFire(state)
+        val winner = GameRules.winner(state)
         val halves = @Composable { half: Modifier ->
-            ScoreHalf(Side.ME, state.me, Side.ME in pressed, Side.ME in onFire, half)
-            ScoreHalf(Side.OPPONENT, state.opponent, Side.OPPONENT in pressed, Side.OPPONENT in onFire, half)
+            ScoreHalf(Side.ME, state.me, Side.ME in pressed, Side.ME in onFire, resultFor(Side.ME, winner), half)
+            ScoreHalf(Side.OPPONENT, state.opponent, Side.OPPONENT in pressed, Side.OPPONENT in onFire, resultFor(Side.OPPONENT, winner), half)
         }
 
         if (landscape) {
@@ -68,17 +71,25 @@ fun PhoneScoreboard(
         } else {
             Column(board) { halves(Modifier.weight(1f).fillMaxWidth()) }
         }
+        Confetti(winner, Modifier.fillMaxSize())
     }
 }
 
+private fun resultFor(side: Side, winner: Side?): GameResult? = when (winner) {
+    null -> null
+    side -> GameResult.WON
+    else -> GameResult.LOST
+}
+
 @Composable
-private fun ScoreHalf(side: Side, score: Int, pressed: Boolean, burning: Boolean, modifier: Modifier) {
+private fun ScoreHalf(side: Side, score: Int, pressed: Boolean, burning: Boolean, result: GameResult?, modifier: Modifier) {
     Box(modifier = modifier.fireBackground(burning, flameHeight = 0.95f), contentAlignment = Alignment.Center) {
         FlipScore(
             score = score,
             side = side,
             pressed = pressed,
             burning = burning,
+            result = result,
             modifier = Modifier
                 .fillMaxWidth(0.88f)
                 .fillMaxHeight(0.84f),

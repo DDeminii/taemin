@@ -19,7 +19,10 @@ enum class HapticPattern(internal val timings: LongArray) {
     MINUS(longArrayOf(0, LONG_MS)),
 
     /** 새 게임: 길게 2번 */
-    NEW_GAME(longArrayOf(0, LONG_MS, LONG_GAP_MS, LONG_MS));
+    NEW_GAME(longArrayOf(0, LONG_MS, LONG_GAP_MS, LONG_MS)),
+
+    /** 경기 승리 (누가 이기든): 길게-짧게-짧게-길게 */
+    WIN(longArrayOf(0, LONG_MS, SHORT_GAP_MS, SHORT_MS, SHORT_GAP_MS, SHORT_MS, SHORT_GAP_MS, LONG_MS));
 
     companion object {
         /**

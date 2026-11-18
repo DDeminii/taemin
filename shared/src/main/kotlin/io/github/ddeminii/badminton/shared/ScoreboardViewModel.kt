@@ -9,6 +9,7 @@ import io.github.ddeminii.badminton.shared.cheer.CheerSchedule
 import io.github.ddeminii.badminton.shared.gesture.GestureAction
 import io.github.ddeminii.badminton.shared.haptics.HapticPattern
 import io.github.ddeminii.badminton.shared.haptics.Haptics
+import io.github.ddeminii.badminton.shared.model.GameRules
 import io.github.ddeminii.badminton.shared.model.ScoreState
 import io.github.ddeminii.badminton.shared.model.Side
 import io.github.ddeminii.badminton.shared.sync.ScoreSync
@@ -57,7 +58,7 @@ class ScoreboardViewModel(application: Application) : AndroidViewModel(applicati
         if (new == old) return // 0점에서 −1: 아무 일도 일어나지 않음
 
         commit(new)
-        haptics.play(pattern)
+        haptics.play(if (justWon(old, new)) HapticPattern.WIN else pattern)
         sync.push(new)
         if (action is GestureAction.Increment) countPointForCheer()
     }
@@ -68,9 +69,14 @@ class ScoreboardViewModel(application: Application) : AndroidViewModel(applicati
 
         commit(remote)
         val pattern = HapticPattern.forChange(old, remote)
-        if (vibrateOnRemoteChange) pattern?.let(haptics::play)
+        if (vibrateOnRemoteChange) {
+            (if (justWon(old, remote)) HapticPattern.WIN else pattern)?.let(haptics::play)
+        }
         if (pattern == HapticPattern.MY_POINT || pattern == HapticPattern.OPPONENT_POINT) countPointForCheer()
     }
+
+    private fun justWon(old: ScoreState, new: ScoreState) =
+        GameRules.winner(old) == null && GameRules.winner(new) != null
 
     private fun countPointForCheer() {
         if (cheerSchedule.onPoint()) _cheers.tryEmit(Unit)

@@ -5,6 +5,8 @@ import android.graphics.Rect
 import android.graphics.Typeface
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
@@ -30,10 +32,12 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.nativeCanvas
@@ -44,6 +48,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.core.content.res.ResourcesCompat
 import io.github.ddeminii.badminton.shared.R
 import io.github.ddeminii.badminton.shared.model.Side
+import kotlinx.coroutines.delay
 import kotlin.math.min
 import kotlin.math.sin
 
@@ -56,6 +61,7 @@ import kotlin.math.sin
  * @param cardAspect 카드 한 장의 가로/세로 비율
  * @param rest 절전 화면으로 넘어간 정도 (0 = 평소 색, 1 = 어두운 절전 색). 그릴 때마다 읽는다.
  * @param burning 매치포인트·듀스일 때 true. 카드가 불에 달궈진 듯 달아오른다 (불길은 [fireBackground]).
+ * @param result 경기가 끝났을 때 이쪽이 이겼는지(왕관이 내려앉음) 졌는지(회색으로 흐려짐). 진행 중이면 null.
  */
 @Composable
 fun FlipScore(
@@ -66,7 +72,29 @@ fun FlipScore(
     cardAspect: Float = 0.58f,
     rest: () -> Float = { 0f },
     burning: Boolean = false,
+    result: GameResult? = null,
 ) {
+    val fade = animateFloatAsState(
+        targetValue = if (result == GameResult.LOST) 1f else 0f,
+        animationSpec = tween(durationMillis = 600),
+        label = "fade",
+    )
+    // 왕관 자리를 내기 위해 카드가 줄어드는 정도, 그리고 왕관이 떨어져 통통 튀며 내려앉는 진행도
+    val crownRoom = animateFloatAsState(
+        targetValue = if (result == GameResult.WON) 1f else 0f,
+        animationSpec = tween(durationMillis = 350),
+        label = "crownRoom",
+    )
+    val crownDrop = remember { Animatable(0f) }
+    LaunchedEffect(result) {
+        if (result == GameResult.WON) {
+            crownDrop.snapTo(0f)
+            delay(CROWN_DELAY_MS)
+            crownDrop.animateTo(1f, spring(dampingRatio = 0.4f, stiffness = Spring.StiffnessLow))
+        } else {
+            crownDrop.snapTo(0f)
+        }
+    }
     val heat = animateFloatAsState(
         targetValue = if (burning) 1f else 0f,
         animationSpec = tween(durationMillis = 600),
@@ -84,7 +112,8 @@ fun FlipScore(
         val glow = heat.value * (0.85f + 0.15f * sin(time.floatValue * HEAT_PULSE_SPEED))
         ScoreColors.of(side)
             .towards(ScoreColors.hot(side), glow)
-            .towards(ScoreColors.resting(side), rest())
+            .towards(ScoreColors.Faded, fade.value)
+            .towards(ScoreColors.resting(side).towards(ScoreColors.RestingFaded, fade.value), rest())
     }
     val press = animateFloatAsState(
         targetValue = if (pressed) 1f else 0f,
@@ -110,13 +139,21 @@ fun FlipScore(
             transformOrigin = TransformOrigin(0.5f, BURNING_ANCHOR_Y)
         }
 
+        // 이기면 카드가 아래쪽을 기준으로 조금 줄어들어 위에 왕관 자리를 낸다.
+        val crownLayer = Modifier.graphicsLayer {
+            val scale = 1f - CROWN_ROOM * crownRoom.value
+            scaleX = scale
+            scaleY = scale
+            transformOrigin = TransformOrigin(0.5f, 1f)
+        }
+
         // 달궈진 카드 주위로 번지는 열기
-        Canvas(fireLayer.size(rowWidth, cardHeight)) {
+        Canvas(crownLayer.then(fireLayer).size(rowWidth, cardHeight)) {
             drawHeatHalo(heat.value * (1f - rest()))
         }
 
         Row(
-            modifier = fireLayer.graphicsLayer {
+            modifier = crownLayer.then(fireLayer).graphicsLayer {
                 val scale = 1f - PRESSED_SHRINK * press.value
                 scaleX = scale
                 scaleY = scale
@@ -135,6 +172,55 @@ fun FlipScore(
                 }
             }
         }
+
+        // 왕관. 카드 위로 떨어져 통통 튀며 내려앉는다.
+        Canvas(Modifier.size(rowWidth, cardHeight)) {
+            val drop = crownDrop.value
+            if (drop <= 0f) return@Canvas
+            val cardsTop = size.height * CROWN_ROOM * crownRoom.value
+            val crownWidth = size.width * CROWN_WIDTH * (1f - CROWN_ROOM * crownRoom.value)
+            val fall = (1f - drop) * size.height * 0.9f
+            drawCrown(
+                centerX = size.width / 2f,
+                baseY = cardsTop - size.height * 0.015f - fall,
+                width = crownWidth,
+                alpha = (drop * 3f).coerceIn(0f, 1f),
+            )
+        }
+    }
+}
+
+/** 경기가 끝났을 때 이쪽의 결과 */
+enum class GameResult { WON, LOST }
+
+/** 왕관 하나를 [baseY]에 바닥을 맞춰 그린다. */
+private fun DrawScope.drawCrown(centerX: Float, baseY: Float, width: Float, alpha: Float) {
+    val height = width * 0.62f
+    val left = centerX - width / 2f
+    val right = centerX + width / 2f
+    val outline = Path().apply {
+        moveTo(left, baseY)
+        lineTo(left, baseY - height * 0.6f)
+        lineTo(centerX - width / 4f, baseY - height * 0.25f)
+        lineTo(centerX, baseY - height)
+        lineTo(centerX + width / 4f, baseY - height * 0.25f)
+        lineTo(right, baseY - height * 0.6f)
+        lineTo(right, baseY)
+        close()
+    }
+    translate(top = height * 0.035f) { drawPath(outline, Color.Black, alpha = 0.10f * alpha) }
+    drawPath(outline, ScoreColors.CrownGold, alpha = alpha)
+    drawRect(
+        color = ScoreColors.CrownBand,
+        topLeft = Offset(left, baseY - height * 0.18f),
+        size = Size(width, height * 0.18f),
+        alpha = alpha,
+    )
+    for (tip in listOf(Offset(left, baseY - height * 0.6f), Offset(centerX, baseY - height), Offset(right, baseY - height * 0.6f))) {
+        drawCircle(ScoreColors.CrownPearl, radius = height * 0.09f, center = tip, alpha = alpha)
+    }
+    ScoreColors.CrownGems.forEachIndexed { i, gem ->
+        drawCircle(gem, radius = height * 0.065f, center = Offset(centerX + (i - 1) * width / 4f, baseY - height * 0.09f), alpha = alpha)
     }
 }
 
@@ -308,6 +394,11 @@ private const val MAX_FLAP_SHADE = 0.22f
 /** 불타는 동안 카드가 줄어드는 비율과, 줄어들 때 붙잡는 세로 위치 (0 = 위, 1 = 아래) */
 private const val BURNING_SHRINK = 0.16f
 private const val BURNING_ANCHOR_Y = 0.15f
+
+/** 이겼을 때 왕관 자리를 내려고 카드가 줄어드는 비율, 왕관 너비(카드 줄 너비 대비), 떨어지기 전 잠깐의 틈 */
+private const val CROWN_ROOM = 0.2f
+private const val CROWN_WIDTH = 0.42f
+private const val CROWN_DELAY_MS = 250L
 
 /** 달아오른 카드가 밝아졌다 어두워지는 빠르기 (라디안/초) */
 private const val HEAT_PULSE_SPEED = 3f

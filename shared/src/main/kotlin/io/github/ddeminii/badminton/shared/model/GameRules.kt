@@ -7,6 +7,17 @@ package io.github.ddeminii.badminton.shared.model
 object GameRules {
     const val GAME_POINT = 25
 
+    /** 경기에서 이긴 쪽. [gamePoint]점 이상이면서 2점 차 이상 앞서면 이긴다. 아직 진행 중이면 null. */
+    fun winner(state: ScoreState, gamePoint: Int = GAME_POINT): Side? {
+        val lead = state.me - state.opponent
+        return when {
+            maxOf(state.me, state.opponent) < gamePoint -> null
+            lead >= 2 -> Side.ME
+            lead <= -2 -> Side.OPPONENT
+            else -> null
+        }
+    }
+
     /**
      * 불타는 효과를 보여 줄 쪽.
      * - 매치포인트 (한 점만 더 내면 이기는 쪽): 그쪽만

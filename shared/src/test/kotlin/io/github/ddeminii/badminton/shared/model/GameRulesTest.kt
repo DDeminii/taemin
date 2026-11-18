@@ -32,6 +32,16 @@ class GameRulesTest {
     }
 
     @Test
+    fun `the winner needs the game point and a two point lead`() {
+        assertEquals(null, GameRules.winner(ScoreState(24, 22)))
+        assertEquals(null, GameRules.winner(ScoreState(25, 24)))
+        assertEquals(ME, GameRules.winner(ScoreState(25, 23)))
+        assertEquals(ME, GameRules.winner(ScoreState(25, 0)))
+        assertEquals(OPPONENT, GameRules.winner(ScoreState(28, 30)))
+        assertEquals(null, GameRules.winner(ScoreState(31, 31)))
+    }
+
+    @Test
     fun `nothing burns once the game is won`() {
         assertEquals(emptySet<Side>(), fire(25, 23))
         assertEquals(emptySet<Side>(), fire(26, 24))

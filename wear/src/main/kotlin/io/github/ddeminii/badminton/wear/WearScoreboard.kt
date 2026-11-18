@@ -2,6 +2,7 @@ package io.github.ddeminii.badminton.wear
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Spacer
@@ -24,7 +25,9 @@ import io.github.ddeminii.badminton.shared.gesture.twoButtonInput
 import io.github.ddeminii.badminton.shared.model.GameRules
 import io.github.ddeminii.badminton.shared.model.ScoreState
 import io.github.ddeminii.badminton.shared.model.Side
+import io.github.ddeminii.badminton.shared.ui.Confetti
 import io.github.ddeminii.badminton.shared.ui.FlipScore
+import io.github.ddeminii.badminton.shared.ui.GameResult
 import io.github.ddeminii.badminton.shared.ui.ScoreColors
 import io.github.ddeminii.badminton.shared.ui.fireBackground
 import kotlinx.coroutines.delay
@@ -84,8 +87,10 @@ fun WearScoreboard(
     )
     val restFraction = { rest.value }
 
+    val winner = GameRules.winner(state)
+    Box(modifier.fillMaxSize()) {
     Column(
-        modifier = modifier
+        modifier = Modifier
             .fillMaxSize()
             .drawBehind { drawRect(lerp(ScoreColors.Backdrop, ScoreColors.RestingBackdrop, rest.value)) }
             .twoButtonInput(
@@ -97,13 +102,28 @@ fun WearScoreboard(
     ) {
         // 절전 화면에서는 불길을 끄고 애니메이션도 멈춰 배터리를 아낀다.
         val onFire = if (resting) emptySet() else GameRules.onFire(state)
-        WearHalf(Side.ME, state.me, Side.ME in pressed, Side.ME in onFire, restFraction)
-        WearHalf(Side.OPPONENT, state.opponent, Side.OPPONENT in pressed, Side.OPPONENT in onFire, restFraction)
+        WearHalf(Side.ME, state.me, Side.ME in pressed, Side.ME in onFire, resultFor(Side.ME, winner), restFraction)
+        WearHalf(Side.OPPONENT, state.opponent, Side.OPPONENT in pressed, Side.OPPONENT in onFire, resultFor(Side.OPPONENT, winner), restFraction)
+    }
+    Confetti(winner, Modifier.fillMaxSize())
     }
 }
 
+private fun resultFor(side: Side, winner: Side?): GameResult? = when (winner) {
+    null -> null
+    side -> GameResult.WON
+    else -> GameResult.LOST
+}
+
 @Composable
-private fun ColumnScope.WearHalf(side: Side, score: Int, pressed: Boolean, burning: Boolean, rest: () -> Float) {
+private fun ColumnScope.WearHalf(
+    side: Side,
+    score: Int,
+    pressed: Boolean,
+    burning: Boolean,
+    result: GameResult?,
+    rest: () -> Float,
+) {
     val top = side == Side.ME
     Column(
         modifier = Modifier
@@ -120,6 +140,7 @@ private fun ColumnScope.WearHalf(side: Side, score: Int, pressed: Boolean, burni
             cardAspect = CARD_ASPECT,
             rest = rest,
             burning = burning,
+            result = result,
             modifier = Modifier
                 .weight(CARDS_SPACE)
                 .fillMaxWidth(CARDS_WIDTH),
