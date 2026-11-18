@@ -37,7 +37,10 @@ class ScoreboardViewModel(application: Application) : AndroidViewModel(applicati
     private val cheerSchedule = CheerSchedule()
     private val _cheers = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
 
-    /** 응원을 내보낼 때가 되면 값이 하나 나온다. 어느 기기에서 점수를 올렸든 몇 점마다 한 번씩. */
+    /**
+     * 응원을 내보낼 때가 되면 값이 하나 나온다. 어느 기기에서 점수를 올렸든 몇 점마다 한 번씩.
+     * 지금은 소리를 내지 않는다. 녹음된 응원 목소리를 넣을 때 폰 MainActivity 의 주석을 참고한다.
+     */
     val cheers: SharedFlow<Unit> = _cheers.asSharedFlow()
 
     init {

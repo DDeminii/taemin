@@ -20,17 +20,12 @@ import androidx.core.net.toUri
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
-import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.repeatOnLifecycle
 import io.github.ddeminii.badminton.shared.ScoreboardViewModel
-import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
     private val viewModel: ScoreboardViewModel by viewModels()
-    private lateinit var cheerVoice: CheerVoice
     private val flatHold by lazy { FlatOrientationHold(this) }
 
     private val notificationPermission =
@@ -51,15 +46,30 @@ class MainActivity : ComponentActivity() {
         }
         hideSystemBars()
 
-        // 점수판이 화면에 떠 있는 동안, 몇 점마다 한 번씩 응원 음성을 낸다.
-        cheerVoice = CheerVoice(this)
-        lifecycleScope.launch {
-            repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.cheers.collect { cheerVoice.cheer() }
-            }
-        }
 
         if (savedInstanceState == null) askForWatchLaunchPermissions()
+
+        // ── 응원 소리 (지금은 꺼 둠) ──────────────────────────────────────────────
+        // 나중에 녹음된 응원 목소리("태민 화이팅!")로 켜려면:
+        //  1. 녹음 파일을 phone/src/main/res/raw/cheer.mp3 로 넣는다 (m4a, ogg, wav 도 됨. 파일 이름은 소문자·숫자·_ 만).
+        //  2. 아래 주석을 푼다. 그러면 4~7점마다 한 번씩 (shared 의 CheerSchedule) 녹음이 재생된다.
+        //     소리 크기는 폰의 미디어 음량을 따른다.
+        //  3. onDestroy() 에서 cheerSound?.release() 를 부른다.
+        //
+        // cheerSound = MediaPlayer.create(this, R.raw.cheer)
+        // lifecycleScope.launch {
+        //     repeatOnLifecycle(Lifecycle.State.STARTED) {
+        //         viewModel.cheers.collect {
+        //             cheerSound?.seekTo(0)
+        //             cheerSound?.start()
+        //         }
+        //     }
+        // }
+        //
+        // (필요한 것: 클래스에 `private var cheerSound: MediaPlayer? = null`,
+        //  import android.media.MediaPlayer, androidx.lifecycle.Lifecycle,
+        //  androidx.lifecycle.lifecycleScope, androidx.lifecycle.repeatOnLifecycle, kotlinx.coroutines.launch)
+        // ─────────────────────────────────────────────────────────────────────────
     }
 
     /**
@@ -90,11 +100,6 @@ class MainActivity : ComponentActivity() {
             }
             .setNegativeButton(R.string.permission_later, null)
             .show()
-    }
-
-    override fun onDestroy() {
-        cheerVoice.shutdown()
-        super.onDestroy()
     }
 
     /**

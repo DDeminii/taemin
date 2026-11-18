@@ -54,7 +54,6 @@ Galaxy Watch7(Wear OS)과 Galaxy S25 Ultra(Android) 어느 쪽에서 눌러도 �
   새 게임은 평소처럼 두 버튼을 함께 0.8초 누른다.
 
   <img src="docs/phone_won.png" width="480">
-- 폰은 4~7점마다 한 번씩 "태민 화이팅!" 하고 여자 목소리로 응원한다. 소리 크기는 폰의 미디어 음량을 따른다.
 - 워치는 옆으로 쓸어도 닫히지 않는다. 종료는 워치의 뒤로/홈 버튼으로 한다.
 
 ## 프로젝트 구조
@@ -72,12 +71,11 @@ wear/     워치 앱 (원형 화면, Compose for Wear OS)
 | `shared/.../gesture/TwoButtonInput.kt` | 터치 이벤트를 위 판정기에 연결하는 Compose Modifier |
 | `shared/.../haptics/Haptics.kt` | 진동 패턴 (길이 조정은 이 파일 상수) |
 | `shared/.../sync/ScoreSync.kt` | 워치 ↔ 폰 동기화 |
-| `shared/.../cheer/CheerSchedule.kt` | 응원을 몇 점마다 낼지 (기본 4~7점) |
-| `phone/.../CheerVoice.kt` | 응원 음성 (글자 읽어주기, 문구는 `phone/.../strings.xml`의 `cheer_text`) |
 | `shared/.../model/GameRules.kt` | 매치포인트·듀스·승리 판단 (경기 점수 `GAME_POINT` = 25) |
 | `shared/.../ui/Confetti.kt` | 승리 꽃가루 |
 | `shared/.../ui/LoserEffect.kt` | 진 쪽 효과 목록과 무작위 선택 |
 | `shared/.../ui/FireBackground.kt` | 불길 셰이더와 어두운 배경 |
+| `shared/.../cheer/CheerSchedule.kt` | 응원을 몇 점마다 낼지 (기본 4~7점). 지금은 소리를 내지 않음 |
 | `shared/.../sync/PhoneLaunch.kt` | 워치가 폰에 보내는 "점수판 열기" 신호 |
 | `phone/.../FlatOrientationHold.kt` | 폰을 바닥에 눕히면 화면 방향 고정 |
 | `phone/.../OpenFromWatchService.kt` | 그 신호를 받아 폰 점수판을 띄우거나 알림을 보여 줌 |
@@ -161,7 +159,6 @@ Android Studio에서 이 폴더를 열면 실행 구성에 `phone`과 `wear`가 
 - [ ] 땀 난 손으로 눌렀을 때 오터치 정도 (`WearScoreboard.kt`의 `tapLockoutMs`로 조정)
 - [ ] 워치에서 옆으로 쓸어도 앱이 닫히지 않는지
 - [ ] 워치 절전 화면이 체육관 조명에서 읽을 만한지, 절전 중 첫 터치가 바로 점수로 들어가는지
-- [ ] 폰에서 응원 음성이 여자 목소리로, 들릴 만한 크기로 나오는지
 - [ ] 매치포인트·듀스의 불길이 끊김 없이 움직이는지, 숫자가 잘 읽히는지 (24:22, 24:24로 확인)
 - [ ] 승리 때 왕관·꽃가루가 매끄럽게 나오는지, 승리 진동이 구분되는지
 - [ ] 폰을 세로로 네트 아래에 눕혔을 때 방향이 고정되는지, 양쪽에서 자기 점수가 똑바로 보이는지
@@ -172,3 +169,8 @@ Android Studio에서 이 폴더를 열면 실행 구성에 `phone`과 `wear`가 
 ## 글꼴
 
 점수 숫자는 [Oswald](https://github.com/googlefonts/OswaldFont) SemiBold를 쓴다 (SIL Open Font License 1.1, `shared/licenses/`).
+
+## 응원 소리 (꺼 둠)
+
+경기 중 몇 점마다 응원 목소리를 내는 기능은 지금 꺼져 있다. 녹음 파일을 `phone/src/main/res/raw/cheer.mp3`로 넣고
+`phone/.../MainActivity.kt`의 "응원 소리" 주석을 풀면 4~7점마다 그 녹음이 재생된다.
