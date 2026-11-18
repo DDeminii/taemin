@@ -100,6 +100,11 @@ object ScoreColors {
     val CloudShade = Color(0xFF8F99A3)
     val Rain = Color(0xFF6FA8DC)
 
+    /** 진 쪽 효과: 카드에 간 금, 흰 깃발 */
+    val Crack = Color(0xFF6E6560)
+    val FlagPole = Color(0xFF8A6A4A)
+    val FlagEdge = Color(0xFFD3CDC7)
+
     /** 이긴 쪽 색의 꽃가루 */
     val ConfettiMe = listOf(Color(0xFF085041), Color(0xFF128A70), Color(0xFF68E2C2), Color(0xFFFFCD50), Color(0xFFCDEBDD))
     val ConfettiOpponent = listOf(Color(0xFF712B13), Color(0xFFB04A22), Color(0xFFFF966C), Color(0xFFFFCD50), Color(0xFFF8D9C8))

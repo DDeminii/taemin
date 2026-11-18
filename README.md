@@ -42,7 +42,8 @@ Galaxy Watch7(Wear OS)과 Galaxy S25 Ultra(Android) 어느 쪽에서 눌러도 �
 
   <img src="docs/phone_fire.png" width="480">
 - **경기가 끝나면** (25점 이상, 2점 차) 누가 이기든 같은 효과가 나온다: 이긴 쪽 점수 위로 왕관이 떨어져 내려앉고,
-  이긴 쪽 색의 꽃가루가 4초간 쏟아진다. 진 쪽 카드는 회색으로 흐려지고 위에 비구름이 떠서 4초간 비가 내린다.
+  이긴 쪽 색의 꽃가루가 4초간 쏟아진다. 진 쪽 카드는 회색으로 흐려지고, 경기마다 무작위로 비구름(4초간 비) · 금 간 카드 · 흰 깃발 · 축 처진 카드 중 하나가 나온다.
+  폰과 워치는 같은 경기에서 같은 효과를 보여 준다.
   양쪽 카드가 똑같이 줄어 왕관·구름 자리를 내므로 두 점수의 글자 크기는 같다. 승리 진동(길게-짧게-짧게-길게)도 울린다.
   새 게임은 평소처럼 두 버튼을 함께 0.8초 누른다.
 
@@ -69,6 +70,7 @@ wear/     워치 앱 (원형 화면, Compose for Wear OS)
 | `phone/.../CheerVoice.kt` | 응원 음성 (글자 읽어주기, 문구는 `phone/.../strings.xml`의 `cheer_text`) |
 | `shared/.../model/GameRules.kt` | 매치포인트·듀스·승리 판단 (경기 점수 `GAME_POINT` = 25) |
 | `shared/.../ui/Confetti.kt` | 승리 꽃가루 |
+| `shared/.../ui/LoserEffect.kt` | 진 쪽 효과 목록과 무작위 선택 |
 | `shared/.../ui/FireBackground.kt` | 불길 셰이더와 어두운 배경 |
 | `shared/.../sync/PhoneLaunch.kt` | 워치가 폰에 보내는 "점수판 열기" 신호 |
 | `phone/.../OpenFromWatchService.kt` | 그 신호를 받아 폰 점수판을 띄우거나 알림을 보여 줌 |

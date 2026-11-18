@@ -9,6 +9,7 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.github.takahirom.roborazzi.captureRoboImage
 import io.github.ddeminii.badminton.shared.model.ScoreState
+import io.github.ddeminii.badminton.shared.ui.LoserEffect
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -82,5 +83,21 @@ class PhoneScreenshotTest {
         rule.onRoot().captureRoboImage("build/screenshots/phone_won.png")
         rule.mainClock.advanceTimeBy(4_000)
         rule.onRoot().captureRoboImage("build/screenshots/phone_won_settled.png")
+    }
+
+    /** 진 쪽 효과 4가지. 효과는 점수 기록 시각으로 정해지므로 각 효과가 나오는 시각을 찾아 그린다. */
+    @Test
+    fun loserEffects() {
+        rule.mainClock.autoAdvance = false
+        val state = mutableStateOf(ScoreState(me = 25, opponent = 24))
+        rule.setContent { PhoneScoreboard(state = state.value, onAction = {}) }
+        for (effect in LoserEffect.entries) {
+            val stamp = (1L..1_000L).first { LoserEffect.forGame(ScoreState(26, 24, it)) == effect }
+            Snapshot.withMutableSnapshot { state.value = ScoreState(me = 25, opponent = 24, timestamp = stamp - 1) }
+            rule.mainClock.advanceTimeBy(1_000)
+            Snapshot.withMutableSnapshot { state.value = ScoreState(me = 26, opponent = 24, timestamp = stamp) }
+            rule.mainClock.advanceTimeBy(1_800)
+            rule.onRoot().captureRoboImage("build/screenshots/phone_loser_${effect.name.lowercase()}.png")
+        }
     }
 }

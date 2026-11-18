@@ -25,6 +25,7 @@ import io.github.ddeminii.badminton.shared.model.Side
 import io.github.ddeminii.badminton.shared.ui.Confetti
 import io.github.ddeminii.badminton.shared.ui.FlipScore
 import io.github.ddeminii.badminton.shared.ui.GameResult
+import io.github.ddeminii.badminton.shared.ui.LoserEffect
 import io.github.ddeminii.badminton.shared.ui.ScoreColors
 import io.github.ddeminii.badminton.shared.ui.fireBackground
 
@@ -61,9 +62,10 @@ fun PhoneScoreboard(
             )
         val onFire = GameRules.onFire(state)
         val winner = GameRules.winner(state)
+        val loserEffect = LoserEffect.forGame(state)
         val halves = @Composable { half: Modifier ->
-            ScoreHalf(Side.ME, state.me, Side.ME in pressed, Side.ME in onFire, resultFor(Side.ME, winner), half)
-            ScoreHalf(Side.OPPONENT, state.opponent, Side.OPPONENT in pressed, Side.OPPONENT in onFire, resultFor(Side.OPPONENT, winner), half)
+            ScoreHalf(Side.ME, state.me, Side.ME in pressed, Side.ME in onFire, resultFor(Side.ME, winner), loserEffect, half)
+            ScoreHalf(Side.OPPONENT, state.opponent, Side.OPPONENT in pressed, Side.OPPONENT in onFire, resultFor(Side.OPPONENT, winner), loserEffect, half)
         }
 
         if (landscape) {
@@ -82,7 +84,15 @@ private fun resultFor(side: Side, winner: Side?): GameResult? = when (winner) {
 }
 
 @Composable
-private fun ScoreHalf(side: Side, score: Int, pressed: Boolean, burning: Boolean, result: GameResult?, modifier: Modifier) {
+private fun ScoreHalf(
+    side: Side,
+    score: Int,
+    pressed: Boolean,
+    burning: Boolean,
+    result: GameResult?,
+    loserEffect: LoserEffect,
+    modifier: Modifier,
+) {
     Box(modifier = modifier.fireBackground(burning, flameHeight = 0.95f), contentAlignment = Alignment.Center) {
         FlipScore(
             score = score,
@@ -90,6 +100,7 @@ private fun ScoreHalf(side: Side, score: Int, pressed: Boolean, burning: Boolean
             pressed = pressed,
             burning = burning,
             result = result,
+            loserEffect = loserEffect,
             modifier = Modifier
                 .fillMaxWidth(0.88f)
                 .fillMaxHeight(0.84f),

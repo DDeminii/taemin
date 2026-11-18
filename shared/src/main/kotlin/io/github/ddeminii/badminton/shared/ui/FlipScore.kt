@@ -38,6 +38,7 @@ import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
@@ -65,6 +66,7 @@ import kotlin.math.sin
  * @param burning 매치포인트·듀스일 때 true. 카드가 불에 달궈진 듯 달아오른다 (불길은 [fireBackground]).
  * @param result 경기가 끝났을 때 이쪽이 이겼는지(왕관이 내려앉음) 졌는지(회색으로 흐려지고 비구름이 뜸). 진행 중이면 null.
  *   경기가 끝나면 양쪽 카드가 똑같이 줄어들어 위에 왕관·구름 자리를 내므로 두 점수의 글자 크기가 같다.
+ * @param loserEffect 졌을 때 보여 줄 효과
  */
 @Composable
 fun FlipScore(
@@ -76,6 +78,7 @@ fun FlipScore(
     rest: () -> Float = { 0f },
     burning: Boolean = false,
     result: GameResult? = null,
+    loserEffect: LoserEffect = LoserEffect.RAIN,
 ) {
     val fade = animateFloatAsState(
         targetValue = if (result == GameResult.LOST) 1f else 0f,
@@ -90,9 +93,9 @@ fun FlipScore(
     )
     // 왕관은 떨어져 통통 튀며 내려앉고, 구름은 부드럽게 내려와 떠 있는다.
     val crownDrop = remember { Animatable(0f) }
-    // 구름에서 내리는 비 (몇 초 뒤 그친다)
+    // 진 쪽 효과가 움직이는 시간 (비, 깃발 펄럭임). 몇 초 뒤 멈춰 배터리를 쓰지 않는다.
     val rain = remember { Animatable(0f) }
-    LaunchedEffect(result) {
+    LaunchedEffect(result, loserEffect) {
         crownDrop.snapTo(0f)
         rain.snapTo(0f)
         when (result) {
@@ -102,7 +105,12 @@ fun FlipScore(
             }
             GameResult.LOST -> {
                 delay(CROWN_DELAY_MS)
-                launch { crownDrop.animateTo(1f, spring(dampingRatio = 0.85f, stiffness = Spring.StiffnessVeryLow)) }
+                val appear = when (loserEffect) {
+                    LoserEffect.DROOP -> spring<Float>(dampingRatio = 0.3f, stiffness = Spring.StiffnessLow)
+                    LoserEffect.CRACK -> tween(durationMillis = 450, easing = LinearEasing)
+                    else -> spring(dampingRatio = 0.85f, stiffness = Spring.StiffnessVeryLow)
+                }
+                launch { crownDrop.animateTo(1f, appear) }
                 delay(RAIN_DELAY_MS)
                 rain.animateTo(1f, tween(RAIN_MS, easing = LinearEasing))
             }
@@ -166,8 +174,18 @@ fun FlipScore(
             drawHeatHalo(heat.value * (1f - rest()))
         }
 
+        // 축 처진 카드: 왼쪽 아래를 축으로 힘없이 기울어진다.
+        val droop = Modifier.graphicsLayer {
+            if (result == GameResult.LOST && loserEffect == LoserEffect.DROOP) {
+                val d = crownDrop.value
+                rotationZ = DROOP_DEGREES * d
+                translationY = size.height * 0.03f * d
+                transformOrigin = TransformOrigin(0.06f, 1f)
+            }
+        }
+
         Row(
-            modifier = crownLayer.then(fireLayer).graphicsLayer {
+            modifier = crownLayer.then(droop).then(fireLayer).graphicsLayer {
                 val scale = 1f - PRESSED_SHRINK * press.value
                 scaleX = scale
                 scaleY = scale
@@ -198,10 +216,34 @@ fun FlipScore(
                 val fall = (1f - drop) * size.height * 0.9f
                 drawCrown(size.width / 2f, cardsTop - size.height * 0.015f - fall, width, alpha)
             } else {
-                val fall = (1f - drop) * size.height * 0.25f
-                val cloudBase = cardsTop - size.height * 0.03f - fall
-                drawRain(size.width / 2f, cloudBase, width, rain.value)
-                drawCloud(size.width / 2f, cloudBase, width, alpha)
+                val scale = 1f - CROWN_ROOM * crownRoom.value
+                when (loserEffect) {
+                    LoserEffect.RAIN -> {
+                        val fall = (1f - drop) * size.height * 0.25f
+                        val cloudBase = cardsTop - size.height * 0.03f - fall
+                        drawRain(size.width / 2f, cloudBase, width, rain.value)
+                        drawCloud(size.width / 2f, cloudBase, width, alpha)
+                    }
+                    LoserEffect.WHITE_FLAG -> {
+                        val rise = (1f - drop) * size.height * 0.15f
+                        drawWhiteFlag(size.width / 2f, cardsTop - size.height * 0.01f + rise, width, rain.value, alpha)
+                    }
+                    LoserEffect.CRACK -> {
+                        val cw = cardWidth.toPx() * scale
+                        val left = (size.width - size.width * scale) / 2f
+                        for (i in 0 until count) {
+                            drawCracks(
+                                left = left + i * cw * (1f + CARD_GAP),
+                                top = cardsTop,
+                                width = cw,
+                                height = size.height - cardsTop,
+                                mirrored = i % 2 == 1,
+                                progress = drop.coerceIn(0f, 1f),
+                            )
+                        }
+                    }
+                    LoserEffect.DROOP -> Unit
+                }
             }
         }
     }
@@ -209,6 +251,65 @@ fun FlipScore(
 
 /** 경기가 끝났을 때 이쪽의 결과 */
 enum class GameResult { WON, LOST }
+
+/**
+ * 카드에 간 금. 카드 위쪽 가장자리에서 시작해 아래로 갈라지며, [progress]만큼 그어진다.
+ * [mirrored]면 좌우를 뒤집어 두 카드의 금 모양이 다르게 보이게 한다.
+ */
+private fun DrawScope.drawCracks(left: Float, top: Float, width: Float, height: Float, mirrored: Boolean, progress: Float) {
+    if (progress <= 0f) return
+    fun point(fx: Float, fy: Float) = Offset(left + width * (if (mirrored) 1f - fx else fx), top + height * fy)
+    val trunk = listOf(0.62f to 0f, 0.55f to 0.17f, 0.69f to 0.31f, 0.46f to 0.5f, 0.6f to 0.66f, 0.41f to 0.85f)
+    val branch = listOf(0.46f to 0.5f, 0.27f to 0.6f, 0.2f to 0.77f)
+    val stroke = width * 0.03f
+    fun crack(points: List<Pair<Float, Float>>, amount: Float, thickness: Float) {
+        val segments = points.size - 1
+        val reach = amount * segments
+        for (s in 0 until segments) {
+            if (reach <= s) break
+            val a = point(points[s].first, points[s].second)
+            val b = point(points[s + 1].first, points[s + 1].second)
+            val t = (reach - s).coerceAtMost(1f)
+            val end = Offset(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t)
+            drawLine(Color.White, a + Offset(thickness * 0.5f, 0f), end + Offset(thickness * 0.5f, 0f), strokeWidth = thickness, cap = StrokeCap.Round, alpha = 0.7f)
+            drawLine(ScoreColors.Crack, a, end, strokeWidth = thickness, cap = StrokeCap.Round)
+        }
+    }
+    crack(trunk, progress, stroke)
+    crack(branch, ((progress - 0.45f) / 0.55f).coerceIn(0f, 1f), stroke * 0.7f)
+}
+
+/** 항복의 흰 깃발. 깃대 아래쪽이 [baseY]에 꽂히고, [wave]가 1이 될 때까지 펄럭이다가 잔잔해진다. */
+private fun DrawScope.drawWhiteFlag(centerX: Float, baseY: Float, width: Float, wave: Float, alpha: Float) {
+    val poleHeight = width * 0.78f
+    val poleX = centerX - width * 0.28f
+    val poleTop = baseY - poleHeight
+    drawLine(ScoreColors.FlagPole, Offset(poleX, baseY), Offset(poleX, poleTop), strokeWidth = width * 0.035f, cap = StrokeCap.Round, alpha = alpha)
+    drawCircle(ScoreColors.FlagPole, radius = width * 0.035f, center = Offset(poleX, poleTop), alpha = alpha)
+
+    val flagWidth = width * 0.6f
+    val flagHeight = width * 0.34f
+    val seconds = wave * RAIN_MS / 1000f
+    val amplitude = flagHeight * (0.05f + 0.13f * (1f - wave))
+    val steps = 14
+    val flag = Path()
+    for (k in 0..steps) {
+        val f = k / steps.toFloat()
+        val x = poleX + flagWidth * f
+        val y = poleTop + width * 0.03f + sin(f * 5f - seconds * 7f) * amplitude * f
+        if (k == 0) flag.moveTo(x, y) else flag.lineTo(x, y)
+    }
+    for (k in steps downTo 0) {
+        val f = k / steps.toFloat()
+        val x = poleX + flagWidth * f
+        val y = poleTop + width * 0.03f + flagHeight + sin(f * 5f - seconds * 7f - 0.6f) * amplitude * f
+        flag.lineTo(x, y)
+    }
+    flag.close()
+    translate(top = flagHeight * 0.08f) { drawPath(flag, Color.Black, alpha = 0.08f * alpha) }
+    drawPath(flag, Color.White, alpha = alpha)
+    drawPath(flag, ScoreColors.FlagEdge, alpha = alpha, style = Stroke(width = width * 0.012f))
+}
 
 /** 비구름 하나를 [baseY]에 바닥을 맞춰 그린다. */
 private fun DrawScope.drawCloud(centerX: Float, baseY: Float, width: Float, alpha: Float) {
@@ -458,6 +559,9 @@ private const val BURNING_ANCHOR_Y = 0.15f
 private const val CROWN_ROOM = 0.2f
 private const val CROWN_WIDTH = 0.42f
 private const val CROWN_DELAY_MS = 250L
+
+/** 축 처진 카드가 기울어지는 각도 */
+private const val DROOP_DEGREES = -7f
 
 /** 진 쪽 구름에서 비가 내리는 시간, 구름이 뜬 뒤 비가 시작되기까지의 틈, 빗줄기 수 */
 private const val RAIN_MS = 4_000

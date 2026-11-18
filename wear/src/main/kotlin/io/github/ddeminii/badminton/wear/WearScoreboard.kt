@@ -28,6 +28,7 @@ import io.github.ddeminii.badminton.shared.model.Side
 import io.github.ddeminii.badminton.shared.ui.Confetti
 import io.github.ddeminii.badminton.shared.ui.FlipScore
 import io.github.ddeminii.badminton.shared.ui.GameResult
+import io.github.ddeminii.badminton.shared.ui.LoserEffect
 import io.github.ddeminii.badminton.shared.ui.ScoreColors
 import io.github.ddeminii.badminton.shared.ui.fireBackground
 import kotlinx.coroutines.delay
@@ -88,6 +89,7 @@ fun WearScoreboard(
     val restFraction = { rest.value }
 
     val winner = GameRules.winner(state)
+    val loserEffect = LoserEffect.forGame(state)
     Box(modifier.fillMaxSize()) {
     Column(
         modifier = Modifier
@@ -102,8 +104,8 @@ fun WearScoreboard(
     ) {
         // 절전 화면에서는 불길을 끄고 애니메이션도 멈춰 배터리를 아낀다.
         val onFire = if (resting) emptySet() else GameRules.onFire(state)
-        WearHalf(Side.ME, state.me, Side.ME in pressed, Side.ME in onFire, resultFor(Side.ME, winner), restFraction)
-        WearHalf(Side.OPPONENT, state.opponent, Side.OPPONENT in pressed, Side.OPPONENT in onFire, resultFor(Side.OPPONENT, winner), restFraction)
+        WearHalf(Side.ME, state.me, Side.ME in pressed, Side.ME in onFire, resultFor(Side.ME, winner), loserEffect, restFraction)
+        WearHalf(Side.OPPONENT, state.opponent, Side.OPPONENT in pressed, Side.OPPONENT in onFire, resultFor(Side.OPPONENT, winner), loserEffect, restFraction)
     }
     Confetti(winner, Modifier.fillMaxSize())
     }
@@ -122,6 +124,7 @@ private fun ColumnScope.WearHalf(
     pressed: Boolean,
     burning: Boolean,
     result: GameResult?,
+    loserEffect: LoserEffect,
     rest: () -> Float,
 ) {
     val top = side == Side.ME
@@ -141,6 +144,7 @@ private fun ColumnScope.WearHalf(
             rest = rest,
             burning = burning,
             result = result,
+            loserEffect = loserEffect,
             modifier = Modifier
                 .weight(CARDS_SPACE)
                 .fillMaxWidth(CARDS_WIDTH),
