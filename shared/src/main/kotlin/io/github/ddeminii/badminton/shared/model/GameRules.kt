@@ -18,6 +18,10 @@ object GameRules {
         }
     }
 
+    /** 어느 쪽이든 매치포인트에 닿을 만큼(24점) 온 경기 막판인지 */
+    fun inEndgame(state: ScoreState, gamePoint: Int = GAME_POINT): Boolean =
+        maxOf(state.me, state.opponent) >= gamePoint - 1
+
     /**
      * 불타는 효과를 보여 줄 쪽.
      * - 매치포인트 (한 점만 더 내면 이기는 쪽): 그쪽만

@@ -21,21 +21,21 @@ import kotlin.math.sin
  * 그보다 오래된 기기에서는 단순한 불꽃 모양으로 대신한다.
  * 불타지 않는 동안에는 아무것도 그리지 않고 애니메이션도 멈춰 배터리를 쓰지 않는다.
  *
- * 불은 계속 타지 않고 몇 초 뒤 서서히 꺼진다 ([rememberFlare]). 새 점수([ignite])가 나면 다시 잠깐 타오른다.
+ * 불은 계속 타지 않고 몇 초 뒤 서서히 꺼지며, 한 경기에서 한 번만 타오른다 ([rememberFlare]).
  *
  * @param burning 불을 붙일 상황인지 (매치포인트·듀스)
- * @param ignite 바뀔 때마다 불을 다시 붙이는 값 (보통 현재 점수)
+ * @param rearm 다음 매치포인트에서 다시 한 번 타오를 수 있게 할지 (경기 막판이 아닐 때 true)
  * @param flameHeight 이 영역 높이 대비 뒤쪽 불길이 닿는 높이
  * @param frontHeight 이 영역 높이 대비 카드 앞쪽 불길이 닿는 높이 (0이면 앞쪽 불길 없음)
  */
 @Composable
 fun Modifier.fireBackground(
     burning: Boolean,
-    ignite: Any? = null,
+    rearm: Boolean = false,
     flameHeight: Float = 1f,
     frontHeight: Float = 0.2f,
 ): Modifier {
-    val flare = rememberFlare(burning, ignite)
+    val flare = rememberFlare(burning, rearm)
     val heat = flare.heat
     val time = flare.time
     val shaders = remember {

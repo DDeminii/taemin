@@ -104,9 +104,9 @@ fun WearScoreboard(
     ) {
         // 절전 화면에서는 불길을 끄고 애니메이션도 멈춰 배터리를 아낀다.
         val onFire = if (resting) emptySet() else GameRules.onFire(state)
-        val ignite = state.me to state.opponent
-        WearHalf(Side.ME, state.me, Side.ME in pressed, Side.ME in onFire, ignite, resultFor(Side.ME, winner), loserEffect, restFraction)
-        WearHalf(Side.OPPONENT, state.opponent, Side.OPPONENT in pressed, Side.OPPONENT in onFire, ignite, resultFor(Side.OPPONENT, winner), loserEffect, restFraction)
+        val rearm = !GameRules.inEndgame(state)
+        WearHalf(Side.ME, state.me, Side.ME in pressed, Side.ME in onFire, rearm, resultFor(Side.ME, winner), loserEffect, restFraction)
+        WearHalf(Side.OPPONENT, state.opponent, Side.OPPONENT in pressed, Side.OPPONENT in onFire, rearm, resultFor(Side.OPPONENT, winner), loserEffect, restFraction)
     }
     Confetti(winner, Modifier.fillMaxSize())
     }
@@ -124,7 +124,7 @@ private fun ColumnScope.WearHalf(
     score: Int,
     pressed: Boolean,
     burning: Boolean,
-    ignite: Any?,
+    rearm: Boolean,
     result: GameResult?,
     loserEffect: LoserEffect,
     rest: () -> Float,
@@ -134,7 +134,7 @@ private fun ColumnScope.WearHalf(
         modifier = Modifier
             .weight(1f)
             .fillMaxWidth()
-            .fireBackground(burning, ignite, flameHeight = 1f),
+            .fireBackground(burning, rearm, flameHeight = 1f),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Spacer(Modifier.weight(if (top) OUTER_SPACE else INNER_SPACE))
@@ -145,7 +145,7 @@ private fun ColumnScope.WearHalf(
             cardAspect = CARD_ASPECT,
             rest = rest,
             burning = burning,
-            ignite = ignite,
+            rearm = rearm,
             result = result,
             loserEffect = loserEffect,
             modifier = Modifier

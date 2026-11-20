@@ -71,7 +71,7 @@ fun PhoneScoreboard(
                 score = if (side == Side.ME) state.me else state.opponent,
                 pressed = side in pressed,
                 burning = side in onFire,
-                ignite = state.me to state.opponent,
+                rearm = !GameRules.inEndgame(state),
                 result = resultFor(side, winner),
                 loserEffect = loserEffect,
                 // 세로일 때는 꽃가루도 절반마다 따로, 각 선수 쪽으로 떨어지게 한다.
@@ -107,19 +107,19 @@ private fun ScoreHalf(
     score: Int,
     pressed: Boolean,
     burning: Boolean,
-    ignite: Any?,
+    rearm: Boolean,
     result: GameResult?,
     loserEffect: LoserEffect,
     confetti: Side?,
     modifier: Modifier,
 ) {
-    Box(modifier = modifier.fireBackground(burning, ignite, flameHeight = 0.95f), contentAlignment = Alignment.Center) {
+    Box(modifier = modifier.fireBackground(burning, rearm, flameHeight = 0.95f), contentAlignment = Alignment.Center) {
         FlipScore(
             score = score,
             side = side,
             pressed = pressed,
             burning = burning,
-            ignite = ignite,
+            rearm = rearm,
             result = result,
             loserEffect = loserEffect,
             modifier = Modifier

@@ -65,7 +65,7 @@ import kotlin.math.sin
  * @param rest 절전 화면으로 넘어간 정도 (0 = 평소 색, 1 = 어두운 절전 색). 그릴 때마다 읽는다.
  * @param burning 매치포인트·듀스일 때 true. 카드가 불에 달궈진 듯 달아오른다 (불길은 [fireBackground]).
  *   불이 서서히 꺼진 뒤에도 카드 둘레에 은은한 주황빛이 남는다.
- * @param ignite 바뀔 때마다 다시 달아오르게 하는 값 (보통 현재 점수). [fireBackground]와 같은 값을 준다.
+ * @param rearm 다음 매치포인트에서 다시 달아오를 수 있게 할지. [fireBackground]와 같은 값을 준다.
  * @param result 경기가 끝났을 때 이쪽이 이겼는지(왕관이 내려앉음) 졌는지(회색으로 흐려지고 비구름이 뜸). 진행 중이면 null.
  *   경기가 끝나면 양쪽 카드가 똑같이 줄어들어 위에 왕관·구름 자리를 내므로 두 점수의 글자 크기가 같다.
  * @param loserEffect 졌을 때 보여 줄 효과
@@ -79,7 +79,7 @@ fun FlipScore(
     cardAspect: Float = 0.58f,
     rest: () -> Float = { 0f },
     burning: Boolean = false,
-    ignite: Any? = null,
+    rearm: Boolean = false,
     result: GameResult? = null,
     loserEffect: LoserEffect = LoserEffect.RAIN,
 ) {
@@ -121,7 +121,7 @@ fun FlipScore(
         }
     }
     // 불이 타오르는 동안의 세기. 몇 초 뒤 서서히 꺼진다.
-    val flare = rememberFlare(burning, ignite)
+    val flare = rememberFlare(burning, rearm)
     val heat = flare.heat
     val time = flare.time
     // 불이 꺼진 뒤에도 매치포인트·듀스인 동안 카드 둘레에 남는 은은한 주황빛 (움직이지 않는다)
