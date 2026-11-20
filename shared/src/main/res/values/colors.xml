@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 앱이 뜨는 순간의 창 배경. ScoreColors.Backdrop 과 같은 색이어야 한다. -->
+    <color name="scoreboard_backdrop">#F3F0EA</color>
+</resources>

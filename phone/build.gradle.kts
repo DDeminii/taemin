@@ -1,0 +1,65 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
+plugins {
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.kotlin.compose)
+}
+
+android {
+    namespace = "io.github.ddeminii.badminton.phone"
+    compileSdk = libs.versions.compileSdk.get().toInt()
+
+    defaultConfig {
+        // 워치 앱과 applicationId 및 서명 키가 같아야 Data Layer 동기화가 된다.
+        applicationId = "io.github.ddeminii.badminton"
+        minSdk = libs.versions.phoneMinSdk.get().toInt()
+        targetSdk = libs.versions.targetSdk.get().toInt()
+        versionCode = 1
+        versionName = "1.0"
+    }
+
+    buildFeatures {
+        compose = true
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+            // 화면 미리보기 PNG를 build/screenshots 에 저장한다.
+            all {
+                it.systemProperty("roborazzi.test.record", "true")
+                it.outputs.dir(layout.buildDirectory.dir("screenshots"))
+            }
+        }
+    }
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget = JvmTarget.JVM_17
+    }
+}
+
+dependencies {
+    implementation(project(":shared"))
+    implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.lifecycle.runtime.compose)
+    implementation(libs.play.services.wearable)
+    // Play 서비스가 끌어오는 오래된 Fragment 대신 권한 요청이 제대로 동작하는 버전을 쓴다.
+    implementation(libs.androidx.fragment)
+
+    testImplementation(libs.junit)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.ext.junit)
+    testImplementation(libs.androidx.compose.ui.test.junit4)
+    testImplementation(libs.roborazzi)
+    testImplementation(libs.roborazzi.compose)
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
+}

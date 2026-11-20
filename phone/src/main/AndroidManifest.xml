@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- 워치에서 점수판을 켰을 때 폰 점수판을 띄우기 위한 권한 -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+
+    <application
+        android:allowBackup="false"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.Scoreboard">
+
+        <!-- 폰을 가로로 두면 좌/우, 세로로 두면 위/아래로 점수가 나온다. 시스템의 자동 회전 잠금과 상관없이 돌아가며,
+             바닥에 눕히면 그 방향으로 고정된다 (FlatOrientationHold). -->
+        <activity
+            android:name=".MainActivity"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboardHidden"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:screenOrientation="fullSensor">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- 워치에서 점수판을 켜면 앱이 꺼져 있어도 이 서비스가 신호를 받아 점수판을 띄운다.
+             pathPrefix 는 shared 의 PhoneLaunch.OPEN_PATH 와 같아야 한다. -->
+        <service
+            android:name=".OpenFromWatchService"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.google.android.gms.wearable.MESSAGE_RECEIVED" />
+                <data
+                    android:host="*"
+                    android:pathPrefix="/open-scoreboard"
+                    android:scheme="wear" />
+            </intent-filter>
+        </service>
+    </application>
+
+</manifest>
