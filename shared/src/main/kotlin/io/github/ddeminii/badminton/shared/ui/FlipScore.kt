@@ -64,6 +64,8 @@ import kotlin.math.sin
  * @param cardAspect 카드 한 장의 가로/세로 비율
  * @param rest 절전 화면으로 넘어간 정도 (0 = 평소 색, 1 = 어두운 절전 색). 그릴 때마다 읽는다.
  * @param burning 매치포인트·듀스일 때 true. 카드가 불에 달궈진 듯 달아오른다 (불길은 [fireBackground]).
+ *   불이 서서히 꺼진 뒤에도 카드 둘레에 은은한 주황빛이 남는다.
+ * @param ignite 바뀔 때마다 다시 달아오르게 하는 값 (보통 현재 점수). [fireBackground]와 같은 값을 준다.
  * @param result 경기가 끝났을 때 이쪽이 이겼는지(왕관이 내려앉음) 졌는지(회색으로 흐려지고 비구름이 뜸). 진행 중이면 null.
  *   경기가 끝나면 양쪽 카드가 똑같이 줄어들어 위에 왕관·구름 자리를 내므로 두 점수의 글자 크기가 같다.
  * @param loserEffect 졌을 때 보여 줄 효과
@@ -77,6 +79,7 @@ fun FlipScore(
     cardAspect: Float = 0.58f,
     rest: () -> Float = { 0f },
     burning: Boolean = false,
+    ignite: Any? = null,
     result: GameResult? = null,
     loserEffect: LoserEffect = LoserEffect.RAIN,
 ) {
@@ -117,21 +120,19 @@ fun FlipScore(
             null -> Unit
         }
     }
-    val heat = animateFloatAsState(
-        targetValue = if (burning) 1f else 0f,
+    // 불이 타오르는 동안의 세기. 몇 초 뒤 서서히 꺼진다.
+    val flare = rememberFlare(burning, ignite)
+    val heat = flare.heat
+    val time = flare.time
+    // 불이 꺼진 뒤에도 매치포인트·듀스인 동안 카드 둘레에 남는 은은한 주황빛 (움직이지 않는다)
+    val ember = animateFloatAsState(
+        targetValue = if (burning) CARD_EMBER else 0f,
         animationSpec = tween(durationMillis = 600),
-        label = "heat",
+        label = "ember",
     )
-    // 불길이 일렁이는 시간(초). 불타는 동안에만 매 프레임 흐르고, 꺼지면 멈춰 배터리를 쓰지 않는다.
-    val time = remember { mutableFloatStateOf(0f) }
-    LaunchedEffect(burning) {
-        if (!burning) return@LaunchedEffect
-        val start = withFrameNanos { it } - (time.floatValue * 1e9f).toLong()
-        while (true) withFrameNanos { time.floatValue = (it - start) / 1e9f }
-    }
     val palette = {
-        // 달아오른 카드는 숨 쉬듯 조금씩 밝아졌다 어두워진다.
-        val glow = heat.value * (0.85f + 0.15f * sin(time.floatValue * HEAT_PULSE_SPEED))
+        // 타오르는 동안 카드는 숨 쉬듯 조금씩 밝아졌다 어두워지고, 불이 꺼지면 원래 색으로 돌아간다.
+        val glow = heat.value * (0.85f + 0.15f * sin(time.value * HEAT_PULSE_SPEED))
         ScoreColors.of(side)
             .towards(ScoreColors.hot(side), glow)
             .towards(ScoreColors.Faded, fade.value)
@@ -171,7 +172,7 @@ fun FlipScore(
 
         // 달궈진 카드 주위로 번지는 열기
         Canvas(crownLayer.then(fireLayer).size(rowWidth, cardHeight)) {
-            drawHeatHalo(heat.value * (1f - rest()))
+            drawHeatHalo(maxOf(heat.value, ember.value) * (1f - rest()))
         }
 
         // 축 처진 카드: 왼쪽 아래를 축으로 힘없이 기울어진다.
@@ -566,6 +567,9 @@ private const val MAX_FLAP_SHADE = 0.22f
 
 /** 불타는 동안 카드가 줄어드는 비율과, 줄어들 때 붙잡는 세로 위치 (0 = 위, 1 = 아래) */
 private const val BURNING_SHRINK = 0.16f
+
+/** 불이 꺼진 뒤 카드 둘레에 남는 주황빛의 세기 (0~1) */
+private const val CARD_EMBER = 0.7f
 private const val BURNING_ANCHOR_Y = 0.15f
 
 /** 이겼을 때 왕관 자리를 내려고 카드가 줄어드는 비율, 왕관 너비(카드 줄 너비 대비), 떨어지기 전 잠깐의 틈 */

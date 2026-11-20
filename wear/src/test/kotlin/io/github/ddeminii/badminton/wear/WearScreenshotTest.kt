@@ -73,6 +73,10 @@ class WearScreenshotTest {
         rule.mainClock.advanceTimeBy(1_500)
         rule.onRoot().captureRoboImage("build/screenshots/wear_match_point.png")
 
+        // 몇 초 뒤 불은 서서히 꺼지고 카드에 은은한 주황빛만 남는다.
+        rule.mainClock.advanceTimeBy(7_000)
+        rule.onRoot().captureRoboImage("build/screenshots/wear_match_point_settled.png")
+
         Snapshot.withMutableSnapshot { state.value = ScoreState(me = 24, opponent = 24) }
         rule.mainClock.advanceTimeBy(1_500)
         rule.onRoot().captureRoboImage("build/screenshots/wear_deuce.png")

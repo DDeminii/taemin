@@ -3,13 +3,8 @@ package io.github.ddeminii.badminton.shared.ui
 import android.graphics.RuntimeShader
 import android.os.Build
 import androidx.annotation.RequiresApi
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Brush
@@ -26,23 +21,23 @@ import kotlin.math.sin
  * 그보다 오래된 기기에서는 단순한 불꽃 모양으로 대신한다.
  * 불타지 않는 동안에는 아무것도 그리지 않고 애니메이션도 멈춰 배터리를 쓰지 않는다.
  *
- * @param burning 불을 붙일지
+ * 불은 계속 타지 않고 몇 초 뒤 서서히 꺼진다 ([rememberFlare]). 새 점수([ignite])가 나면 다시 잠깐 타오른다.
+ *
+ * @param burning 불을 붙일 상황인지 (매치포인트·듀스)
+ * @param ignite 바뀔 때마다 불을 다시 붙이는 값 (보통 현재 점수)
  * @param flameHeight 이 영역 높이 대비 뒤쪽 불길이 닿는 높이
  * @param frontHeight 이 영역 높이 대비 카드 앞쪽 불길이 닿는 높이 (0이면 앞쪽 불길 없음)
  */
 @Composable
-fun Modifier.fireBackground(burning: Boolean, flameHeight: Float = 1f, frontHeight: Float = 0.2f): Modifier {
-    val heat = animateFloatAsState(
-        targetValue = if (burning) 1f else 0f,
-        animationSpec = tween(durationMillis = if (burning) 900 else 500),
-        label = "fire",
-    )
-    val time = remember { mutableFloatStateOf(0f) }
-    LaunchedEffect(burning) {
-        if (!burning) return@LaunchedEffect
-        val start = withFrameNanos { it } - (time.floatValue * 1e9f).toLong()
-        while (true) withFrameNanos { time.floatValue = (it - start) / 1e9f }
-    }
+fun Modifier.fireBackground(
+    burning: Boolean,
+    ignite: Any? = null,
+    flameHeight: Float = 1f,
+    frontHeight: Float = 0.2f,
+): Modifier {
+    val flare = rememberFlare(burning, ignite)
+    val heat = flare.heat
+    val time = flare.time
     val shaders = remember {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) FireShader() to FireShader() else null
     }
@@ -53,7 +48,7 @@ fun Modifier.fireBackground(burning: Boolean, flameHeight: Float = 1f, frontHeig
             drawContent()
             return@drawWithContent
         }
-        val t = time.floatValue
+        val t = time.value
         drawRect(ScoreColors.FireBackdrop, alpha = h)
         if (shaders != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             shaders.first.draw(this, t, h, flameHeight, strength = 1f, seed = 0f)
